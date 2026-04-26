@@ -48,6 +48,8 @@ export default function LessonScreen() {
   const [quizCorrect, setQuizCorrect] = useState(0);
   const [practiceSequence, setPracticeSequence] = useState<string[]>([]);
   const [quizSequence, setQuizSequence] = useState<string[]>([]);
+  const [practiceAnswerRevealed, setPracticeAnswerRevealed] = useState(false);
+  const [quizAnswerRevealed, setQuizAnswerRevealed] = useState(false);
 
   const lessonLetters = mode === 'letters' && 'letters' in activeLesson ? activeLesson.letters : [];
   const lessonWords = mode === 'words' && 'words' in activeLesson ? activeLesson.words : [];
@@ -101,6 +103,14 @@ export default function LessonScreen() {
     setQuizSequence(shuffledQuiz);
   }, [mode, activeLesson]);
 
+  useEffect(() => {
+    setPracticeAnswerRevealed(false);
+  }, [practiceIndex, phase]);
+
+  useEffect(() => {
+    setQuizAnswerRevealed(false);
+  }, [quizIndex, phase]);
+
   const progress = useMemo(() => {
     const teachWeight = mode === 'words' ? 0.35 : 0.5;
     const practiceWeight = mode === 'words' ? 0.35 : 0.5;
@@ -150,7 +160,17 @@ export default function LessonScreen() {
     setQuizCorrect(0);
     setPracticeSequence(shuffledPractice);
     setQuizSequence(shuffledQuiz);
+    setPracticeAnswerRevealed(false);
+    setQuizAnswerRevealed(false);
     setFeedback('Teaching started. Tap next to continue through the lesson.');
+  };
+
+  const restartTeachMode = () => {
+    setPhase('teach');
+    setTeachIndex(0);
+    setPracticeAnswerRevealed(false);
+    setQuizAnswerRevealed(false);
+    setFeedback('Teaching from the start. Tap Next when you are ready.');
   };
 
   const nextTeachStep = () => {
@@ -196,6 +216,12 @@ export default function LessonScreen() {
     setFeedback(`Not quite. Try again. Hint: ${expected.length} characters.`);
   };
 
+  const revealPracticeAnswer = () => {
+    const answer = practiceUnits[practiceIndex] ?? '';
+    setPracticeAnswerRevealed(true);
+    setFeedback(`Answer: ${answer}`);
+  };
+
   const checkQuizAnswer = () => {
     if (mode !== 'words') {
       return;
@@ -224,6 +250,11 @@ export default function LessonScreen() {
     }
 
     setFeedback('Not correct yet. Look closely at each sign image.');
+  };
+
+  const revealQuizAnswer = () => {
+    setQuizAnswerRevealed(true);
+    setFeedback(`Answer: ${quizWord}`);
   };
 
   const isSubtabEnabled = (tabId: LessonPhase) => {
@@ -292,6 +323,10 @@ export default function LessonScreen() {
             })}
         </ScrollView>
 
+        <Pressable style={styles.secondaryButton} onPress={restartTeachMode}>
+          <Text style={styles.secondaryButtonText}>Restart teach (from first step)</Text>
+        </Pressable>
+
         {phase === 'teach' && (
           <View style={styles.panel}>
             <Text style={styles.panelTitle}>Teach</Text>
@@ -322,7 +357,7 @@ export default function LessonScreen() {
 
             <Pressable style={styles.actionButton} onPress={nextTeachStep}>
               <Text style={styles.actionButtonText}>
-                {teachIndex < teachUnits.length - 1 ? 'Next Teaching Step' : 'Start Practice'}
+                {teachIndex < teachUnits.length - 1 ? 'Next Unit' : 'Start Practice'}
               </Text>
             </Pressable>
           </View>
@@ -364,9 +399,19 @@ export default function LessonScreen() {
               style={styles.answerInput}
               placeholderTextColor="#6EA487"
             />
-            <Pressable style={styles.actionButton} onPress={checkPracticeAnswer}>
-              <Text style={styles.actionButtonText}>Check Practice Answer</Text>
-            </Pressable>
+            {practiceAnswerRevealed && (
+              <Text style={styles.revealedAnswerText}>
+                Revealed: {practiceUnits[practiceIndex] ?? ''}
+              </Text>
+            )}
+            <View style={styles.buttonRow}>
+              <Pressable style={styles.secondaryButtonFlex} onPress={revealPracticeAnswer}>
+                <Text style={styles.secondaryButtonText}>Reveal answer</Text>
+              </Pressable>
+              <Pressable style={styles.actionButtonFlex} onPress={checkPracticeAnswer}>
+                <Text style={styles.actionButtonText}>Check answer</Text>
+              </Pressable>
+            </View>
           </View>
         )}
 
@@ -389,9 +434,15 @@ export default function LessonScreen() {
               style={styles.answerInput}
               placeholderTextColor="#6EA487"
             />
-            <Pressable style={styles.actionButton} onPress={checkQuizAnswer}>
-              <Text style={styles.actionButtonText}>Submit Quiz Answer</Text>
-            </Pressable>
+            {quizAnswerRevealed && <Text style={styles.revealedAnswerText}>Revealed: {quizWord}</Text>}
+            <View style={styles.buttonRow}>
+              <Pressable style={styles.secondaryButtonFlex} onPress={revealQuizAnswer}>
+                <Text style={styles.secondaryButtonText}>Reveal answer</Text>
+              </Pressable>
+              <Pressable style={styles.actionButtonFlex} onPress={checkQuizAnswer}>
+                <Text style={styles.actionButtonText}>Submit</Text>
+              </Pressable>
+            </View>
           </View>
         )}
 
@@ -532,6 +583,54 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     borderRadius: 999,
     alignItems: 'center',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'stretch',
+  },
+  actionButtonFlex: {
+    flex: 1,
+    backgroundColor: '#0EC46D',
+    paddingVertical: 11,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButton: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: '#0A7D47',
+    alignItems: 'center',
+  },
+  secondaryButtonFlex: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 11,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: '#0A7D47',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    color: '#0A7D47',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  revealedAnswerText: {
+    color: '#094C2D',
+    fontSize: 15,
+    fontWeight: '700',
+    backgroundColor: '#DFF5E4',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#A8DFB1',
   },
   actionButtonText: {
     color: '#FFFFFF',

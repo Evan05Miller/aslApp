@@ -83,13 +83,13 @@ export const practiceLetterImages: Record<string, number> = {
 };
 
 export const letterLessons: LetterLesson[] = [
-  { id: 'letters-1', title: 'Basics 1: A - I', letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'], goal: 'Learn the first 9 handshapes and their labels.' },
-  { id: 'letters-2', title: 'Basics 2: J - R', letters: ['J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'], goal: 'Recognize curved and directional hand movements.' },
-  { id: 'letters-3', title: 'Basics 3: S - Z', letters: ['S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'], goal: 'Finish the alphabet and practice quick recall.' },
+  { id: 'letters-1', title: 'Basics 1: A - I', letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'], goal: 'Learn the letters of the alphabet.' },
+  { id: 'letters-2', title: 'Basics 2: J - R', letters: ['J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'], goal: 'Learn the letters of the alphabet.' },
+  { id: 'letters-3', title: 'Basics 3: S - Z', letters: ['S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'], goal: 'Learn the letters of the alphabet.' },
 ];
 
 export const wordLessons: WordLesson[] = [
-  { id: 'words-1', title: 'Word Set 1', words: ['CAT', 'DOG', 'SUN', 'BOOK'], goal: 'Spell short, common words with steady pacing.' },
+  { id: 'words-1', title: 'Word Set 1', words: ['CAT', 'DOG', 'SUN', 'BOOK', 'EVAN'], goal: 'Spell short, common words with steady pacing.' },
   { id: 'words-2', title: 'Word Set 2', words: ['FAMILY', 'SCHOOL', 'FRIEND'], goal: 'Practice medium-length words and transitions.' },
   { id: 'words-3', title: 'Word Set 3', words: ['LEARN', 'PRACTICE', 'SUCCESS'], goal: 'Build confidence with longer words.' },
 ];

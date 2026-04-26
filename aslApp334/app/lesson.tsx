@@ -14,28 +14,62 @@ import {
 
 import {
   LearnMode,
+  WordLesson,
   getLessonsForMode,
   lessonSubtabs,
   letterImages,
   practiceLetterImages,
 } from '@/constants/asl-lessons';
+import { CUSTOM_WORD_LESSON_ID, getCustomWordSet } from '@/constants/custom-word-set';
 
 type LessonPhase = 'teach' | 'practice' | 'quiz' | 'complete';
 
 export default function LessonScreen() {
-  const params = useLocalSearchParams<{ mode?: string; lessonId?: string; lessonIndex?: string }>();
+  const params = useLocalSearchParams<{
+    mode?: string;
+    lessonId?: string;
+    lessonIndex?: string;
+    customSetVersion?: string;
+  }>();
   const mode: LearnMode =
     params.mode === 'letters' || params.mode === 'words' || params.mode === 'grammar'
       ? params.mode
       : 'letters';
 
   const lessons = useMemo(() => getLessonsForMode(mode), [mode]);
-  const lessonFromId = lessons.find((lesson) => lesson.id === params.lessonId);
-  const lessonFromIndex =
-    Number.isFinite(Number(params.lessonIndex)) && Number(params.lessonIndex) >= 0
-      ? lessons[Number(params.lessonIndex)]
-      : undefined;
-  const activeLesson = lessonFromId ?? lessonFromIndex ?? lessons[0];
+
+  const customWords = useMemo(() => {
+    if (mode !== 'words' || params.lessonId !== CUSTOM_WORD_LESSON_ID) {
+      return undefined;
+    }
+    const stored = getCustomWordSet();
+    return stored && stored.length > 0 ? [...stored] : null;
+  }, [mode, params.lessonId, params.customSetVersion]); // eslint-disable-line react-hooks/exhaustive-deps -- customSetVersion bumps when user saves a new custom list
+
+  const invalidCustomLesson =
+    mode === 'words' && params.lessonId === CUSTOM_WORD_LESSON_ID && (!customWords || customWords.length === 0);
+
+  const activeLesson = useMemo(() => {
+    if (invalidCustomLesson) {
+      const fallback = lessons[0];
+      return fallback;
+    }
+    if (mode === 'words' && params.lessonId === CUSTOM_WORD_LESSON_ID && customWords && customWords.length > 0) {
+      const wordLesson: WordLesson = {
+        id: CUSTOM_WORD_LESSON_ID,
+        title: 'Custom learning set',
+        words: customWords,
+        goal: 'Practice fingerspelling the words you chose.',
+      };
+      return wordLesson;
+    }
+    const lessonFromId = params.lessonId ? lessons.find((lesson) => lesson.id === params.lessonId) : undefined;
+    const lessonFromIndex =
+      Number.isFinite(Number(params.lessonIndex)) && Number(params.lessonIndex) >= 0
+        ? lessons[Number(params.lessonIndex)]
+        : undefined;
+    return lessonFromId ?? lessonFromIndex ?? lessons[0];
+  }, [invalidCustomLesson, mode, params.lessonId, params.lessonIndex, lessons, customWords]);
 
   const [phase, setPhase] = useState<LessonPhase>('teach');
   const [teachIndex, setTeachIndex] = useState(0);
@@ -50,6 +84,7 @@ export default function LessonScreen() {
   const [quizSequence, setQuizSequence] = useState<string[]>([]);
   const [practiceAnswerRevealed, setPracticeAnswerRevealed] = useState(false);
   const [quizAnswerRevealed, setQuizAnswerRevealed] = useState(false);
+  const [wordLetterIndex, setWordLetterIndex] = useState(0);
 
   const lessonLetters = mode === 'letters' && 'letters' in activeLesson ? activeLesson.letters : [];
   const lessonWords = mode === 'words' && 'words' in activeLesson ? activeLesson.words : [];
@@ -89,6 +124,9 @@ export default function LessonScreen() {
   const quizTotal = mode === 'words' ? quizSequence.length : 0;
 
   useEffect(() => {
+    if (invalidCustomLesson) {
+      return;
+    }
     const letters = mode === 'letters' && 'letters' in activeLesson ? activeLesson.letters : [];
     const words = mode === 'words' && 'words' in activeLesson ? activeLesson.words : [];
     const exercises = mode === 'grammar' && 'exercises' in activeLesson ? activeLesson.exercises : [];
@@ -101,7 +139,7 @@ export default function LessonScreen() {
     const shuffledQuiz = mode === 'words' ? shuffleArray(words) : [];
     setPracticeSequence(shuffledPractice);
     setQuizSequence(shuffledQuiz);
-  }, [mode, activeLesson]);
+  }, [invalidCustomLesson, mode, activeLesson]);
 
   useEffect(() => {
     setPracticeAnswerRevealed(false);
@@ -110,6 +148,12 @@ export default function LessonScreen() {
   useEffect(() => {
     setQuizAnswerRevealed(false);
   }, [quizIndex, phase]);
+
+  useEffect(() => {
+    if (mode === 'words') {
+      setWordLetterIndex(0);
+    }
+  }, [mode, phase, teachIndex, practiceIndex, quizIndex]);
 
   const progress = useMemo(() => {
     const teachWeight = mode === 'words' ? 0.35 : 0.5;
@@ -162,6 +206,7 @@ export default function LessonScreen() {
     setQuizSequence(shuffledQuiz);
     setPracticeAnswerRevealed(false);
     setQuizAnswerRevealed(false);
+    setWordLetterIndex(0);
     setFeedback('Teaching started. Tap next to continue through the lesson.');
   };
 
@@ -170,6 +215,7 @@ export default function LessonScreen() {
     setTeachIndex(0);
     setPracticeAnswerRevealed(false);
     setQuizAnswerRevealed(false);
+    setWordLetterIndex(0);
     setFeedback('Teaching from the start. Tap Next when you are ready.');
   };
 
@@ -270,6 +316,77 @@ export default function LessonScreen() {
     return phase === 'complete';
   };
 
+  const teachWord = mode === 'words' ? lessonWords[teachIndex] ?? '' : '';
+
+  const renderWordLetterCarousel = (
+    word: string,
+    variant: 'teach' | 'practice',
+    options?: { showLetterLabel?: boolean },
+  ) => {
+    const showLetterLabel = options?.showLetterLabel ?? true;
+    const letters = word.split('');
+    const len = letters.length;
+    if (len === 0) {
+      return null;
+    }
+    const safeIndex = Math.min(wordLetterIndex, len - 1);
+    const letter = letters[safeIndex] ?? '';
+    const sources = variant === 'teach' ? letterImages : practiceLetterImages;
+
+    return (
+      <View style={styles.wordCarousel}>
+        <Text style={styles.carouselHint}>
+          Letter {safeIndex + 1} of {len} — use arrows to move
+        </Text>
+        <View style={styles.carouselRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Previous letter"
+            onPress={() => setWordLetterIndex((i) => Math.max(0, i - 1))}
+            disabled={safeIndex <= 0}
+            style={[styles.carouselArrow, safeIndex <= 0 && styles.carouselArrowDisabled]}>
+            <Text style={styles.carouselArrowText}>‹</Text>
+          </Pressable>
+          <View style={styles.carouselSignWrap}>
+            <Image source={sources[letter]} style={styles.teachSignImage} contentFit="contain" />
+            {showLetterLabel ? <Text style={styles.teachSignLabel}>{letter}</Text> : null}
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Next letter"
+            onPress={() => setWordLetterIndex((i) => Math.min(len - 1, i + 1))}
+            disabled={safeIndex >= len - 1}
+            style={[styles.carouselArrow, safeIndex >= len - 1 && styles.carouselArrowDisabled]}>
+            <Text style={styles.carouselArrowText}>›</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  };
+
+  if (invalidCustomLesson) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.container}>
+          <View style={styles.topRow}>
+            <Pressable onPress={() => router.back()} style={styles.backButton}>
+              <Text style={styles.backArrow}>←</Text>
+            </Pressable>
+            <View style={styles.topTextWrap}>
+              <Text style={styles.topTitle}>Custom set not available</Text>
+              <Text style={styles.topSubtitle}>
+                Create a list from Learn → Full Words → Create Custom Learning Set, then try again.
+              </Text>
+            </View>
+          </View>
+          <Pressable style={styles.actionButton} onPress={() => router.back()}>
+            <Text style={styles.actionButtonText}>Go back</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -338,15 +455,8 @@ export default function LessonScreen() {
             )}
             {mode === 'words' && (
               <View style={styles.wordCard}>
-                <Text style={styles.wordText}>{lessonWords[teachIndex]}</Text>
-                <View style={styles.wordLettersRow}>
-                  {(lessonWords[teachIndex] ?? '').split('').map((letter, idx) => (
-                    <View key={`${lessonWords[teachIndex]}-${letter}-${idx}`} style={styles.wordLetterCard}>
-                      <Image source={letterImages[letter]} style={styles.wordLetterImage} contentFit="contain" />
-                      <Text style={styles.wordLetterText}>{letter}</Text>
-                    </View>
-                  ))}
-                </View>
+                <Text style={styles.wordText}>Word: {teachWord}</Text>
+                {renderWordLetterCarousel(teachWord, 'teach')}
               </View>
             )}
             {mode === 'grammar' && (
@@ -374,15 +484,8 @@ export default function LessonScreen() {
             )}
             {mode === 'words' && (
               <View style={styles.wordCard}>
-                <Text style={styles.goalText}>Spell this word from signs:</Text>
-                <View style={styles.wordLettersRow}>
-                  {practiceWord.split('').map((letter, idx) => (
-                    <View key={`${practiceWord}-practice-${letter}-${idx}`} style={styles.wordLetterCard}>
-                      <Image source={practiceLetterImages[letter]} style={styles.wordLetterImage} contentFit="contain" />
-                      <Text style={styles.wordLetterText}>{letter}</Text>
-                    </View>
-                  ))}
-                </View>
+                <Text style={styles.goalText}>Spell this word from signs (one letter at a time):</Text>
+                {renderWordLetterCarousel(practiceWord, 'practice')}
               </View>
             )}
             {mode === 'grammar' && (
@@ -418,14 +521,8 @@ export default function LessonScreen() {
         {phase === 'quiz' && mode === 'words' && (
           <View style={styles.panel}>
             <Text style={styles.panelTitle}>Word Spelling Quiz</Text>
-            <Text style={styles.goalText}>Look at the sign sequence and spell the word.</Text>
-            <View style={styles.wordLettersRow}>
-              {quizWord.split('').map((letter, idx) => (
-                <View key={`${quizWord}-quiz-${letter}-${idx}`} style={styles.wordLetterCard}>
-                  <Image source={practiceLetterImages[letter]} style={styles.wordLetterImage} contentFit="contain" />
-                </View>
-              ))}
-            </View>
+            <Text style={styles.goalText}>Look at each sign and spell the word (arrows to move between letters).</Text>
+            {renderWordLetterCarousel(quizWord, 'practice', { showLetterLabel: false })}
             <TextInput
               value={quizInput}
               onChangeText={setQuizInput}
@@ -674,6 +771,51 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+  },
+  wordCarousel: {
+    gap: 8,
+    marginTop: 4,
+  },
+  carouselHint: {
+    color: '#266E48',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  carouselRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  carouselArrow: {
+    width: 48,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: '#0EC46D',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  carouselArrowDisabled: {
+    backgroundColor: '#9BC9A8',
+    opacity: 0.7,
+  },
+  carouselArrowText: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '700',
+    lineHeight: 32,
+  },
+  carouselSignWrap: {
+    flex: 1,
+    maxWidth: 240,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: '#C7EFC0',
   },
   wordCard: {
     backgroundColor: '#ECFAEE',

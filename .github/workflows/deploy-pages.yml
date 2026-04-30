@@ -42,7 +42,9 @@ jobs:
 
       - name: Add SPA fallback for Pages routes
         working-directory: aslApp334
-        run: cp dist/index.html dist/404.html
+        run: |
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

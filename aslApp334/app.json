@@ -42,6 +42,7 @@
       "expo-web-browser"
     ],
     "experiments": {
+      "baseUrl": "/aslApp",
       "typedRoutes": true,
       "reactCompiler": true
     }

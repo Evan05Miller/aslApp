@@ -20,6 +20,8 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    env:
+      REPO_BASE_URL: /${{ github.event.repository.name }}/
 
     steps:
       - name: Checkout
@@ -38,7 +40,11 @@ jobs:
 
       - name: Build web export
         working-directory: aslApp334
-        run: npx expo export --platform web --output-dir dist
+        run: npx expo export --platform web --output-dir dist --base-url "${{ env.REPO_BASE_URL }}"
+
+      - name: Add SPA fallback for Pages routes
+        working-directory: aslApp334
+        run: cp dist/index.html dist/404.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   SafeAreaView,
@@ -21,6 +22,7 @@ import {
   practiceLetterImages,
 } from '@/constants/asl-lessons';
 import { CUSTOM_WORD_LESSON_ID, getCustomWordSet } from '@/constants/custom-word-set';
+import { getWordSetById } from '@/lib/saved-word-sets';
 
 type LessonPhase = 'teach' | 'practice' | 'quiz' | 'complete';
 
@@ -30,46 +32,113 @@ export default function LessonScreen() {
     lessonId?: string;
     lessonIndex?: string;
     customSetVersion?: string;
+    savedSetId?: string;
   }>();
   const mode: LearnMode =
     params.mode === 'letters' || params.mode === 'words' || params.mode === 'grammar'
       ? params.mode
       : 'letters';
 
+  const rawLessonId = params.lessonId;
+  const lessonIdParam = Array.isArray(rawLessonId) ? rawLessonId[0] : rawLessonId;
+  const rawSavedSetId = params.savedSetId;
+  const savedSetId =
+    typeof rawSavedSetId === 'string' && rawSavedSetId.length > 0
+      ? rawSavedSetId
+      : Array.isArray(rawSavedSetId) && typeof rawSavedSetId[0] === 'string'
+        ? rawSavedSetId[0]
+        : undefined;
+
   const lessons = useMemo(() => getLessonsForMode(mode), [mode]);
 
+  const [savedCustomState, setSavedCustomState] = useState<{
+    loading: boolean;
+    words: string[] | null;
+    title: string | null;
+  }>({ loading: false, words: null, title: null });
+
+  useEffect(() => {
+    if (mode !== 'words' || lessonIdParam !== CUSTOM_WORD_LESSON_ID || !savedSetId) {
+      setSavedCustomState({ loading: false, words: null, title: null });
+      return;
+    }
+    let cancelled = false;
+    setSavedCustomState({ loading: true, words: null, title: null });
+    void getWordSetById(savedSetId).then((set) => {
+      if (cancelled) {
+        return;
+      }
+      if (set && set.words.length > 0) {
+        setSavedCustomState({ loading: false, words: set.words, title: set.title });
+      } else {
+        setSavedCustomState({ loading: false, words: null, title: null });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, lessonIdParam, savedSetId, params.customSetVersion]);
+
   const customWords = useMemo(() => {
-    if (mode !== 'words' || params.lessonId !== CUSTOM_WORD_LESSON_ID) {
+    if (mode !== 'words' || lessonIdParam !== CUSTOM_WORD_LESSON_ID) {
       return undefined;
     }
+    if (savedSetId) {
+      if (savedCustomState.loading) {
+        return undefined;
+      }
+      return savedCustomState.words && savedCustomState.words.length > 0
+        ? [...savedCustomState.words]
+        : null;
+    }
+    const memoryBump = params.customSetVersion;
+    void memoryBump;
     const stored = getCustomWordSet();
     return stored && stored.length > 0 ? [...stored] : null;
-  }, [mode, params.lessonId, params.customSetVersion]); // eslint-disable-line react-hooks/exhaustive-deps -- customSetVersion bumps when user saves a new custom list
+  }, [mode, lessonIdParam, savedSetId, savedCustomState.loading, savedCustomState.words, params.customSetVersion]);
+
+  const isLoadingSavedCustom =
+    mode === 'words' &&
+    lessonIdParam === CUSTOM_WORD_LESSON_ID &&
+    Boolean(savedSetId) &&
+    savedCustomState.loading;
 
   const invalidCustomLesson =
-    mode === 'words' && params.lessonId === CUSTOM_WORD_LESSON_ID && (!customWords || customWords.length === 0);
+    mode === 'words' &&
+    lessonIdParam === CUSTOM_WORD_LESSON_ID &&
+    customWords !== undefined &&
+    (customWords === null || customWords.length === 0);
 
   const activeLesson = useMemo(() => {
     if (invalidCustomLesson) {
       const fallback = lessons[0];
       return fallback;
     }
-    if (mode === 'words' && params.lessonId === CUSTOM_WORD_LESSON_ID && customWords && customWords.length > 0) {
+    if (mode === 'words' && lessonIdParam === CUSTOM_WORD_LESSON_ID && customWords && customWords.length > 0) {
       const wordLesson: WordLesson = {
         id: CUSTOM_WORD_LESSON_ID,
-        title: 'Custom learning set',
+        title: savedSetId && savedCustomState.title ? savedCustomState.title : 'Custom learning set',
         words: customWords,
         goal: 'Practice fingerspelling the words you chose.',
       };
       return wordLesson;
     }
-    const lessonFromId = params.lessonId ? lessons.find((lesson) => lesson.id === params.lessonId) : undefined;
+    const lessonFromId = lessonIdParam ? lessons.find((lesson) => lesson.id === lessonIdParam) : undefined;
     const lessonFromIndex =
       Number.isFinite(Number(params.lessonIndex)) && Number(params.lessonIndex) >= 0
         ? lessons[Number(params.lessonIndex)]
         : undefined;
     return lessonFromId ?? lessonFromIndex ?? lessons[0];
-  }, [invalidCustomLesson, mode, params.lessonId, params.lessonIndex, lessons, customWords]);
+  }, [
+    invalidCustomLesson,
+    mode,
+    lessonIdParam,
+    params.lessonIndex,
+    lessons,
+    customWords,
+    savedSetId,
+    savedCustomState.title,
+  ]);
 
   const [phase, setPhase] = useState<LessonPhase>('teach');
   const [teachIndex, setTeachIndex] = useState(0);
@@ -124,7 +193,7 @@ export default function LessonScreen() {
   const quizTotal = mode === 'words' ? quizSequence.length : 0;
 
   useEffect(() => {
-    if (invalidCustomLesson) {
+    if (isLoadingSavedCustom || invalidCustomLesson) {
       return;
     }
     const letters = mode === 'letters' && 'letters' in activeLesson ? activeLesson.letters : [];
@@ -139,7 +208,7 @@ export default function LessonScreen() {
     const shuffledQuiz = mode === 'words' ? shuffleArray(words) : [];
     setPracticeSequence(shuffledPractice);
     setQuizSequence(shuffledQuiz);
-  }, [invalidCustomLesson, mode, activeLesson]);
+  }, [isLoadingSavedCustom, invalidCustomLesson, mode, activeLesson]);
 
   useEffect(() => {
     setPracticeAnswerRevealed(false);
@@ -364,6 +433,25 @@ export default function LessonScreen() {
     );
   };
 
+  if (isLoadingSavedCustom) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.container}>
+          <View style={styles.topRow}>
+            <Pressable onPress={() => router.back()} style={styles.backButton}>
+              <Text style={styles.backArrow}>←</Text>
+            </Pressable>
+            <View style={styles.topTextWrap}>
+              <Text style={styles.topTitle}>Loading set…</Text>
+              <Text style={styles.topSubtitle}>Fetching your saved words.</Text>
+            </View>
+          </View>
+          <ActivityIndicator size="large" color="#0A7D47" style={styles.loadingSpinner} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (invalidCustomLesson) {
     return (
       <SafeAreaView style={styles.safe}>
@@ -375,7 +463,7 @@ export default function LessonScreen() {
             <View style={styles.topTextWrap}>
               <Text style={styles.topTitle}>Custom set not available</Text>
               <Text style={styles.topSubtitle}>
-                Create a list from Learn → Full Words → Create Custom Learning Set, then try again.
+                Open the My sets tab to start a custom list or choose a saved set, then try again.
               </Text>
             </View>
           </View>
@@ -674,6 +762,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#0B6B3E',
     fontWeight: '700',
+  },
+  loadingSpinner: {
+    marginTop: 24,
   },
   actionButton: {
     backgroundColor: '#0EC46D',

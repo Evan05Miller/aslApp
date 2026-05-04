@@ -1,8 +1,8 @@
-import { Image } from 'expo-image';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { letterImages } from '@/constants/asl-lessons';
+import { AslLetterSign } from '@/components/asl-letter-sign';
+import { hasLetterSignAsset } from '@/constants/asl-lessons';
 
 type Props = {
   setId: string;
@@ -20,10 +20,7 @@ export function FollowAlongSignsPanel({ setId, title, words }: Props) {
 
   const safeWords = useMemo(() => words.filter((w) => w.length > 0), [words]);
   const word = safeWords[wordIndex] ?? '';
-  const letters = useMemo(
-    () => word.split('').filter((ch) => letterImages[ch.toUpperCase()] !== undefined),
-    [word],
-  );
+  const letters = useMemo(() => word.split('').filter((ch) => hasLetterSignAsset(ch)), [word]);
 
   useEffect(() => {
     setWordIndex(0);
@@ -88,8 +85,8 @@ export function FollowAlongSignsPanel({ setId, title, words }: Props) {
                 <Text style={styles.arrowText}>‹</Text>
               </Pressable>
               <View style={styles.signWrap}>
-                {letterUpper && letterImages[letterUpper] ? (
-                  <Image source={letterImages[letterUpper]} style={styles.signImage} contentFit="contain" />
+                {letterUpper && hasLetterSignAsset(letterUpper) ? (
+                  <AslLetterSign letter={letterUpper} variant="teach" style={styles.signImage} />
                 ) : (
                   <Text style={styles.noSign}>No sign for this step.</Text>
                 )}

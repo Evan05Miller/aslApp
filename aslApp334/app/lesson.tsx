@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -13,14 +12,8 @@ import {
   View,
 } from 'react-native';
 
-import {
-  LearnMode,
-  WordLesson,
-  getLessonsForMode,
-  lessonSubtabs,
-  letterImages,
-  practiceLetterImages,
-} from '@/constants/asl-lessons';
+import { AslLetterSign } from '@/components/asl-letter-sign';
+import { LearnMode, WordLesson, getLessonsForMode, lessonSubtabs } from '@/constants/asl-lessons';
 import { CUSTOM_WORD_LESSON_ID, getCustomWordSet } from '@/constants/custom-word-set';
 import { getWordSetById } from '@/lib/saved-word-sets';
 
@@ -400,7 +393,6 @@ export default function LessonScreen() {
     }
     const safeIndex = Math.min(wordLetterIndex, len - 1);
     const letter = letters[safeIndex] ?? '';
-    const sources = variant === 'teach' ? letterImages : practiceLetterImages;
 
     return (
       <View style={styles.wordCarousel}>
@@ -417,7 +409,7 @@ export default function LessonScreen() {
             <Text style={styles.carouselArrowText}>‹</Text>
           </Pressable>
           <View style={styles.carouselSignWrap}>
-            <Image source={sources[letter]} style={styles.teachSignImage} contentFit="contain" />
+            <AslLetterSign letter={letter} variant={variant} style={styles.teachSignImage} />
             {showLetterLabel ? <Text style={styles.teachSignLabel}>{letter}</Text> : null}
           </View>
           <Pressable
@@ -537,7 +529,7 @@ export default function LessonScreen() {
             <Text style={styles.panelTitle}>Teach</Text>
             {mode === 'letters' && (
               <View style={styles.teachSignCard}>
-                <Image source={letterImages[teachLetter]} style={styles.teachSignImage} contentFit="contain" />
+                <AslLetterSign letter={teachLetter} variant="teach" style={styles.teachSignImage} />
                 <Text style={styles.teachSignLabel}>Letter {teachLetter}</Text>
               </View>
             )}
@@ -566,7 +558,7 @@ export default function LessonScreen() {
             <Text style={styles.panelTitle}>Practice</Text>
             {mode === 'letters' && (
               <View style={styles.teachSignCard}>
-                <Image source={practiceLetterImages[practiceLetter]} style={styles.teachSignImage} contentFit="contain" />
+                <AslLetterSign letter={practiceLetter} variant="practice" style={styles.teachSignImage} />
                 <Text style={styles.goalText}>Type the letter shown by the sign.</Text>
               </View>
             )}

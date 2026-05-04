@@ -24,8 +24,10 @@ export type GrammarLesson = {
 
 export type Lesson = LetterLesson | WordLesson | GrammarLesson;
 
+/** Looping video used anywhere letter A is shown (replaces static A images). */
+export const LETTER_A_VIDEO = require('@/assets/images/aslLetterVideos/letter-a.mp4');
+
 export const letterImages: Record<string, number> = {
-  A: require('@/assets/images/aslLetters/A.png'),
   B: require('@/assets/images/aslLetters/B.png'),
   C: require('@/assets/images/aslLetters/C.png'),
   D: require('@/assets/images/aslLetters/D.png'),
@@ -54,7 +56,6 @@ export const letterImages: Record<string, number> = {
 };
 
 export const practiceLetterImages: Record<string, number> = {
-  A: require('@/assets/images/asl Letters Practice/A Practice.png'),
   B: require('@/assets/images/asl Letters Practice/B Practice.png'),
   C: require('@/assets/images/asl Letters Practice/C Practice.png'),
   D: require('@/assets/images/asl Letters Practice/D Practice.png'),
@@ -81,6 +82,15 @@ export const practiceLetterImages: Record<string, number> = {
   Y: require('@/assets/images/asl Letters Practice/Y Practice.png'),
   Z: require('@/assets/images/asl Letters Practice/Z Practice.png'),
 };
+
+/** Whether we can show a sign (still image or A video) for this letter. */
+export function hasLetterSignAsset(letter: string): boolean {
+  const u = letter.toUpperCase();
+  if (u === 'A') {
+    return true;
+  }
+  return letterImages[u] !== undefined;
+}
 
 export const letterLessons: LetterLesson[] = [
   { id: 'letters-1', title: 'Basics 1: A - I', letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'], goal: 'Learn the letters of the alphabet.' },

@@ -4,7 +4,12 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useMemo } from 'react';
 import { Platform, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 
-import { LETTER_A_VIDEO, letterImages, practiceLetterImages } from '@/constants/asl-lessons';
+import { usePreferences } from '@/contexts/preferences-context';
+import {
+  LETTER_VIDEO_SOURCES,
+  letterImages,
+  practiceLetterImages,
+} from '@/constants/asl-lessons';
 
 export type AslLetterVariant = 'teach' | 'practice';
 
@@ -14,7 +19,14 @@ type Props = {
   style: StyleProp<ViewStyle>;
 };
 
-function LetterAVideo({ style }: { style: StyleProp<ViewStyle> }) {
+type LetterVideoProps = {
+  videoSource: number;
+  playbackRate: number;
+  style: StyleProp<ViewStyle>;
+  mirror: boolean;
+};
+
+function LetterSignVideo({ videoSource, playbackRate, style, mirror }: LetterVideoProps) {
   const { width, height, boxStyle } = useMemo(() => {
     const f = StyleSheet.flatten(style) as ViewStyle;
     const w = typeof f.width === 'number' ? f.width : 190;
@@ -22,13 +34,23 @@ function LetterAVideo({ style }: { style: StyleProp<ViewStyle> }) {
     return {
       width: w,
       height: h,
-      boxStyle: [style, { width: w, height: h, alignSelf: 'center' as const }],
+      boxStyle: [
+        style,
+        {
+          width: w,
+          height: h,
+          alignSelf: 'center' as const,
+          transform: mirror ? [{ scaleX: -1 }] : undefined,
+        },
+      ],
     };
-  }, [style]);
+  }, [style, mirror]);
 
-  const player = useVideoPlayer(LETTER_A_VIDEO, (p) => {
+  const player = useVideoPlayer(videoSource, (p) => {
     p.loop = true;
     p.muted = true;
+    p.preservesPitch = true;
+    p.playbackRate = playbackRate;
   });
 
   const { status } = useEvent(player, 'statusChange', {
@@ -39,9 +61,15 @@ function LetterAVideo({ style }: { style: StyleProp<ViewStyle> }) {
     if (status === 'readyToPlay') {
       player.loop = true;
       player.muted = true;
+      player.preservesPitch = true;
+      player.playbackRate = playbackRate;
       player.play();
     }
-  }, [status, player]);
+  }, [status, player, playbackRate]);
+
+  useEffect(() => {
+    player.playbackRate = playbackRate;
+  }, [player, playbackRate]);
 
   return (
     <View style={boxStyle}>
@@ -55,6 +83,7 @@ function LetterAVideo({ style }: { style: StyleProp<ViewStyle> }) {
         onFirstFrameRender={() => {
           player.loop = true;
           player.muted = true;
+          player.playbackRate = playbackRate;
           player.play();
         }}
         {...(Platform.OS === 'android' ? { surfaceType: 'textureView' as const } : {})}
@@ -63,24 +92,65 @@ function LetterAVideo({ style }: { style: StyleProp<ViewStyle> }) {
   );
 }
 
-/**
- * Renders the ASL graphic for a letter; letter A uses a looping bundled video instead of PNGs.
- */
-export function AslLetterSign({ letter, variant, style }: Props) {
-  const L = letter.toUpperCase();
-  if (L === 'A') {
-    return <LetterAVideo style={style} />;
-  }
-  const map = variant === 'teach' ? letterImages : practiceLetterImages;
-  const source = map[L];
-  if (!source) {
-    return null;
-  }
+type LetterImageProps = {
+  source: number;
+  style: StyleProp<ViewStyle>;
+  mirror: boolean;
+};
+
+function LetterSignImage({ source, style, mirror }: LetterImageProps) {
+  const boxStyle = useMemo(() => {
+    const f = StyleSheet.flatten(style) as ViewStyle;
+    const w = typeof f.width === 'number' ? f.width : 190;
+    const h = typeof f.height === 'number' ? f.height : 190;
+    return [
+      style,
+      {
+        width: w,
+        height: h,
+        alignSelf: 'center' as const,
+        transform: mirror ? [{ scaleX: -1 }] : undefined,
+      },
+    ];
+  }, [style, mirror]);
+
   return (
-    <View style={style}>
+    <View style={boxStyle}>
       <Image source={source} style={styles.imageFill} contentFit="contain" />
     </View>
   );
+}
+
+/**
+ * Renders an ASL letter using user preferences (video vs image, speed, handedness mirror).
+ */
+export function AslLetterSign({ letter, variant, style }: Props) {
+  const { preferences } = usePreferences();
+  const L = letter.toUpperCase();
+  const mirror = preferences.handedness === 'righty';
+
+  if (preferences.letterDisplay === 'video') {
+    const src = LETTER_VIDEO_SOURCES[L];
+    if (src === undefined) {
+      return null;
+    }
+    return (
+      <LetterSignVideo
+        key={L}
+        videoSource={src}
+        playbackRate={preferences.videoSpeed}
+        style={style}
+        mirror={mirror}
+      />
+    );
+  }
+
+  const map = variant === 'teach' ? letterImages : practiceLetterImages;
+  const img = map[L];
+  if (img === undefined) {
+    return null;
+  }
+  return <LetterSignImage key={L} source={img} style={style} mirror={mirror} />;
 }
 
 const styles = StyleSheet.create({

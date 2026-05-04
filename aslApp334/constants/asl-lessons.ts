@@ -24,10 +24,42 @@ export type GrammarLesson = {
 
 export type Lesson = LetterLesson | WordLesson | GrammarLesson;
 
-/** Looping video used anywhere letter A is shown (replaces static A images). */
-export const LETTER_A_VIDEO = require('@/assets/images/aslLetterVideos/letter-a.mp4');
+/**
+ * Looping letter videos (teach + practice use the same clip per letter).
+ * Files: assets/images/aslLetterVideos/letter-a.mp4 … letter-z.mp4
+ */
+export const LETTER_VIDEO_SOURCES: Record<string, number> = {
+  A: require('@/assets/images/aslLetterVideos/letter-a.mp4'),
+  B: require('@/assets/images/aslLetterVideos/letter-b.mp4'),
+  C: require('@/assets/images/aslLetterVideos/letter-c.mp4'),
+  D: require('@/assets/images/aslLetterVideos/letter-d.mp4'),
+  E: require('@/assets/images/aslLetterVideos/letter-e.mp4'),
+  F: require('@/assets/images/aslLetterVideos/letter-f.mp4'),
+  G: require('@/assets/images/aslLetterVideos/letter-g.mp4'),
+  H: require('@/assets/images/aslLetterVideos/letter-h.mp4'),
+  I: require('@/assets/images/aslLetterVideos/letter-i.mp4'),
+  J: require('@/assets/images/aslLetterVideos/letter-j.mp4'),
+  K: require('@/assets/images/aslLetterVideos/letter-k.mp4'),
+  L: require('@/assets/images/aslLetterVideos/letter-l.mp4'),
+  M: require('@/assets/images/aslLetterVideos/letter-m.mp4'),
+  N: require('@/assets/images/aslLetterVideos/letter-n.mp4'),
+  O: require('@/assets/images/aslLetterVideos/letter-o.mp4'),
+  P: require('@/assets/images/aslLetterVideos/letter-p.mp4'),
+  Q: require('@/assets/images/aslLetterVideos/letter-q.mp4'),
+  R: require('@/assets/images/aslLetterVideos/letter-r.mp4'),
+  S: require('@/assets/images/aslLetterVideos/letter-s.mp4'),
+  T: require('@/assets/images/aslLetterVideos/letter-t.mp4'),
+  U: require('@/assets/images/aslLetterVideos/letter-u.mp4'),
+  V: require('@/assets/images/aslLetterVideos/letter-v.mp4'),
+  W: require('@/assets/images/aslLetterVideos/letter-w.mp4'),
+  X: require('@/assets/images/aslLetterVideos/letter-x.mp4'),
+  Y: require('@/assets/images/aslLetterVideos/letter-y.mp4'),
+  Z: require('@/assets/images/aslLetterVideos/letter-z.mp4'),
+};
 
+/** Static teach images (Preferences → static images). */
 export const letterImages: Record<string, number> = {
+  A: require('@/assets/images/aslLetters/A.png'),
   B: require('@/assets/images/aslLetters/B.png'),
   C: require('@/assets/images/aslLetters/C.png'),
   D: require('@/assets/images/aslLetters/D.png'),
@@ -55,7 +87,9 @@ export const letterImages: Record<string, number> = {
   Z: require('@/assets/images/aslLetters/Z.png'),
 };
 
+/** Static practice images (Preferences → static images). */
 export const practiceLetterImages: Record<string, number> = {
+  A: require('@/assets/images/asl Letters Practice/A Practice.png'),
   B: require('@/assets/images/asl Letters Practice/B Practice.png'),
   C: require('@/assets/images/asl Letters Practice/C Practice.png'),
   D: require('@/assets/images/asl Letters Practice/D Practice.png'),
@@ -83,13 +117,10 @@ export const practiceLetterImages: Record<string, number> = {
   Z: require('@/assets/images/asl Letters Practice/Z Practice.png'),
 };
 
-/** Whether we can show a sign (still image or A video) for this letter. */
+/** Whether we can show this letter (video and/or static asset exists). */
 export function hasLetterSignAsset(letter: string): boolean {
   const u = letter.toUpperCase();
-  if (u === 'A') {
-    return true;
-  }
-  return letterImages[u] !== undefined;
+  return LETTER_VIDEO_SOURCES[u] !== undefined || letterImages[u] !== undefined;
 }
 
 export const letterLessons: LetterLesson[] = [

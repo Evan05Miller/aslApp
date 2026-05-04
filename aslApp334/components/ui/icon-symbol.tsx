@@ -18,6 +18,7 @@ const MAPPING = {
   'paperplane.fill': 'send',
   'camera.fill': 'videocam',
   'bookmark.fill': 'bookmark',
+  'gearshape.fill': 'settings',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
 } as IconMapping;

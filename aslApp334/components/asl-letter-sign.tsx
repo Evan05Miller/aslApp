@@ -40,6 +40,7 @@ function LetterSignVideo({ videoSource, playbackRate, style, mirror }: LetterVid
           width: w,
           height: h,
           alignSelf: 'center' as const,
+          overflow: 'hidden' as const,
           transform: mirror ? [{ scaleX: -1 }] : undefined,
         },
       ],
@@ -51,6 +52,9 @@ function LetterSignVideo({ videoSource, playbackRate, style, mirror }: LetterVid
     p.muted = true;
     p.preservesPitch = true;
     p.playbackRate = playbackRate;
+    if (Platform.OS === 'ios') {
+      p.allowsExternalPlayback = false;
+    }
   });
 
   const { status } = useEvent(player, 'statusChange', {
@@ -63,6 +67,9 @@ function LetterSignVideo({ videoSource, playbackRate, style, mirror }: LetterVid
       player.muted = true;
       player.preservesPitch = true;
       player.playbackRate = playbackRate;
+      if (Platform.OS === 'ios') {
+        player.allowsExternalPlayback = false;
+      }
       player.play();
     }
   }, [status, player, playbackRate]);
@@ -79,11 +86,20 @@ function LetterSignVideo({ videoSource, playbackRate, style, mirror }: LetterVid
         nativeControls={false}
         contentFit="contain"
         allowsFullscreen={false}
+        fullscreenOptions={{ enable: false }}
+        showsTimecodes={false}
+        requiresLinearPlayback
         allowsPictureInPicture={false}
+        startsPictureInPictureAutomatically={false}
+        pointerEvents="none"
+        playsInline
         onFirstFrameRender={() => {
           player.loop = true;
           player.muted = true;
           player.playbackRate = playbackRate;
+          if (Platform.OS === 'ios') {
+            player.allowsExternalPlayback = false;
+          }
           player.play();
         }}
         {...(Platform.OS === 'android' ? { surfaceType: 'textureView' as const } : {})}

@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 
+import { isBuiltInWordSetId } from '@/constants/builtin-word-sets';
 import { CUSTOM_WORD_LESSON_ID, setCustomWordSet } from '@/constants/custom-word-set';
 import { parseWordsFromInput } from '@/lib/parse-words-input';
 import { deleteWordSet, loadAllSavedSets, saveNewWordSet, type SavedWordSet } from '@/lib/saved-word-sets';
@@ -165,30 +166,30 @@ export default function MySetsScreen() {
             <ActivityIndicator color="#0A7D47" />
             <Text style={styles.loadingText}>Loading…</Text>
           </View>
-        ) : savedSets.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>No saved sets yet. Save one above to see it here.</Text>
-          </View>
         ) : (
           <View style={styles.savedList}>
-            {savedSets.map((set) => (
-              <View key={set.id} style={styles.savedRow}>
-                <View style={styles.savedTextCol}>
-                  <Text style={styles.savedTitle}>{set.title}</Text>
-                  <Text style={styles.savedMeta}>
-                    {set.words.length} word{set.words.length === 1 ? '' : 's'}
-                  </Text>
+            {savedSets.map((set) => {
+              const builtIn = isBuiltInWordSetId(set.id);
+              return (
+                <View key={set.id} style={styles.savedRow}>
+                  <View style={styles.savedTextCol}>
+                    <Text style={styles.savedTitle}>{set.title}</Text>
+                    <Text style={styles.savedMeta}>
+                      {builtIn ? 'Built-in · ' : ''}
+                      {set.words.length} word{set.words.length === 1 ? '' : 's'}
+                    </Text>
+                  </View>
+                  <View style={styles.savedActions}>
+                    <Pressable style={styles.studyBtn} onPress={() => studySaved(set.id)}>
+                      <Text style={styles.studyBtnText}>Study</Text>
+                    </Pressable>
+                    <Pressable style={styles.deleteBtn} onPress={() => setDeleteTarget(set)}>
+                      <Text style={styles.deleteBtnText}>Delete</Text>
+                    </Pressable>
+                  </View>
                 </View>
-                <View style={styles.savedActions}>
-                  <Pressable style={styles.studyBtn} onPress={() => studySaved(set.id)}>
-                    <Text style={styles.studyBtnText}>Study</Text>
-                  </Pressable>
-                  <Pressable style={styles.deleteBtn} onPress={() => setDeleteTarget(set)}>
-                    <Text style={styles.deleteBtnText}>Delete</Text>
-                  </Pressable>
-                </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -202,7 +203,9 @@ export default function MySetsScreen() {
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Delete set</Text>
             <Text style={styles.modalBody}>
-              Remove &quot;{deleteTarget?.title ?? ''}&quot;? This cannot be undone.
+              {deleteTarget && isBuiltInWordSetId(deleteTarget.id)
+                ? `Remove the default “${deleteTarget.title}” list from Practice and My sets? You can add your own set with the same words later.`
+                : `Remove “${deleteTarget?.title ?? ''}”? This cannot be undone.`}
             </Text>
             <View style={styles.modalActions}>
               <Pressable

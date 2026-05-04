@@ -12,7 +12,7 @@ export default function LearnScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.headerCard}>
-          <Text style={styles.headerTitle}>ASL Learning Tool</Text>
+          <Text style={styles.headerTitle}>Learn Fingerspelling</Text>
           <Text style={styles.headerSubtitle}>Pick a mode and open any lesson to start.</Text>
         </View>
 
@@ -77,11 +77,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 24,
     fontWeight: '700',
+    textAlign: 'center',
   },
   headerSubtitle: {
     color: '#EAFEF1',
     marginTop: 4,
     fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
   },
   modeRow: {
     gap: 10,

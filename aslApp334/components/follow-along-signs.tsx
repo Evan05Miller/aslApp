@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { AslLetterSign } from '@/components/asl-letter-sign';
 import { hasLetterSignAsset } from '@/constants/asl-lessons';
@@ -123,29 +123,33 @@ export function FollowAlongSignsPanel({ setId, title, words, lessonMode, onBegin
       {safeWords.length === 0 ? (
         <Text style={styles.empty}>No words in this set.</Text>
       ) : !lessonMode ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.wordTabs}
-          keyboardShouldPersistTaps="handled"
-          nestedScrollEnabled>
-          {safeWords.map((w, i) => {
-            const active = i === wordIndex && wordIndex >= 0;
-            return (
-              <Pressable
-                key={`${w}-${i}`}
-                onPress={() => {
-                  setWordIndex(i);
-                  onBeginLesson();
-                }}
-                style={[styles.wordTab, active && styles.wordTabActive]}>
-                <Text style={[styles.wordTabText, active && styles.wordTabTextActive]} numberOfLines={1}>
-                  {w}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+        <View style={styles.wordPickerShell}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator
+            contentContainerStyle={styles.wordTabs}
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled
+            {...(Platform.OS === 'ios' ? { indicatorStyle: 'default' as const } : {})}>
+            {safeWords.map((w, i) => {
+              const active = i === wordIndex && wordIndex >= 0;
+              return (
+                <Pressable
+                  key={`${w}-${i}`}
+                  onPress={() => {
+                    setWordIndex(i);
+                    onBeginLesson();
+                  }}
+                  style={[styles.wordTab, active && styles.wordTabActive]}>
+                  <Text style={[styles.wordTabText, active && styles.wordTabTextActive]} numberOfLines={1}>
+                    {w}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+          <View style={styles.scrollRail} accessibilityLabel="Scroll for more words" />
+        </View>
       ) : showLesson ? (
         <View style={[styles.carouselCard, styles.carouselCardLesson]}>
           <Text style={styles.lessonWordLabel} numberOfLines={1}>
@@ -244,21 +248,38 @@ const styles = StyleSheet.create({
     color: '#4D8D67',
     lineHeight: 13,
   },
+  wordPickerShell: {
+    marginTop: 6,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#A9E9A5',
+    backgroundColor: '#F4FFF2',
+    paddingTop: 10,
+    paddingBottom: 8,
+    paddingHorizontal: 10,
+  },
+  scrollRail: {
+    alignSelf: 'stretch',
+    height: 5,
+    marginTop: 8,
+    borderRadius: 3,
+    backgroundColor: '#C4E8BC',
+  },
   wordTabs: {
-    paddingVertical: 4,
-    gap: 6,
+    paddingBottom: 2,
+    gap: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingRight: 4,
+    paddingRight: 8,
   },
   wordTab: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: 999,
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#B6EFAE',
-    maxWidth: 140,
+    maxWidth: 152,
   },
   wordTabActive: {
     borderColor: '#08BF6A',

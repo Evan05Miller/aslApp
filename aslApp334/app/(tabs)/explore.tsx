@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -23,7 +24,6 @@ export default function CameraPracticeScreen() {
   const [listLoading, setListLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [upperPage, setUpperPage] = useState<UpperPage>('sets');
-  /** True while practicing a chosen word: top strip is only Back + sign lesson. */
   const [wordLessonOpen, setWordLessonOpen] = useState(false);
 
   const refreshList = useCallback(async () => {
@@ -102,16 +102,18 @@ export default function CameraPracticeScreen() {
                 <>
                   <Text style={styles.screenTitle}>Camera practice</Text>
                   <Text style={styles.screenSubtitle} numberOfLines={2}>
-                    Sets: choose a list. Words: tap a word to practice—only Back and the lesson show while you sign.
+                    Choose a list to practice with and use the camera to get real time feedback.
                   </Text>
 
-                  <View style={styles.pageTabs}>
+                  <View style={styles.pageTabsRow}>
                     <Pressable
                       accessibilityRole="tab"
                       accessibilityState={{ selected: upperPage === 'sets' }}
                       onPress={() => setUpperPage('sets')}
-                      style={[styles.pageTab, upperPage === 'sets' && styles.pageTabActive]}>
-                      <Text style={[styles.pageTabText, upperPage === 'sets' && styles.pageTabTextActive]}>Sets</Text>
+                      style={[styles.pageTabPill, upperPage === 'sets' && styles.pageTabPillActive]}>
+                      <Text style={[styles.pageTabPillText, upperPage === 'sets' && styles.pageTabPillTextActive]}>
+                        Sets
+                      </Text>
                     </Pressable>
                     <Pressable
                       accessibilityRole="tab"
@@ -119,15 +121,15 @@ export default function CameraPracticeScreen() {
                       onPress={() => selectedSet && setUpperPage('words')}
                       disabled={!selectedSet}
                       style={[
-                        styles.pageTab,
-                        upperPage === 'words' && styles.pageTabActive,
-                        !selectedSet && styles.pageTabDisabled,
+                        styles.pageTabPill,
+                        upperPage === 'words' && styles.pageTabPillActive,
+                        !selectedSet && styles.pageTabPillDisabled,
                       ]}>
                       <Text
                         style={[
-                          styles.pageTabText,
-                          upperPage === 'words' && styles.pageTabTextActive,
-                          !selectedSet && styles.pageTabTextDisabled,
+                          styles.pageTabPillText,
+                          upperPage === 'words' && styles.pageTabPillTextActive,
+                          !selectedSet && styles.pageTabPillTextDisabled,
                         ]}>
                         Words
                       </Text>
@@ -151,33 +153,39 @@ export default function CameraPracticeScreen() {
                 {upperPage === 'sets' ? (
                   <>
                     <Text style={styles.sectionLabel}>Your saved sets</Text>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      nestedScrollEnabled
-                      keyboardShouldPersistTaps="handled"
-                      contentContainerStyle={styles.setChipsScroll}>
-                      {savedSets.map((set) => {
-                        const active = set.id === selectedId;
-                        return (
-                          <TouchableOpacity
-                            key={set.id}
-                            activeOpacity={0.75}
-                            onPress={() => {
-                              setSelectedId(set.id);
-                              setUpperPage('words');
-                            }}
-                            style={[styles.setChip, active && styles.setChipActive]}>
-                            <Text style={[styles.setChipTitle, active && styles.setChipTitleActive]} numberOfLines={1}>
-                              {set.title}
-                            </Text>
-                            <Text style={[styles.setChipMeta, active && styles.setChipMetaActive]}>
-                              {set.words.length} word{set.words.length === 1 ? '' : 's'}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </ScrollView>
+                    <View style={styles.setSelectorCard}>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator
+                        nestedScrollEnabled
+                        keyboardShouldPersistTaps="handled"
+                        contentContainerStyle={styles.setChipsScroll}
+                        {...(Platform.OS === 'ios' ? { indicatorStyle: 'default' as const } : {})}>
+                        {savedSets.map((set) => {
+                          const active = set.id === selectedId;
+                          return (
+                            <TouchableOpacity
+                              key={set.id}
+                              activeOpacity={0.75}
+                              onPress={() => {
+                                setSelectedId(set.id);
+                                setUpperPage('words');
+                              }}
+                              style={[styles.setChip, active && styles.setChipActive]}>
+                              <Text
+                                style={[styles.setChipTitle, active && styles.setChipTitleActive]}
+                                numberOfLines={1}>
+                                {set.title}
+                              </Text>
+                              <Text style={[styles.setChipMeta, active && styles.setChipMetaActive]}>
+                                {set.words.length} word{set.words.length === 1 ? '' : 's'}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
+                      <View style={styles.scrollRail} accessibilityLabel="Scroll for more sets" />
+                    </View>
                   </>
                 ) : selectedSet ? (
                   <View style={styles.followAlongHost}>
@@ -268,37 +276,38 @@ const styles = StyleSheet.create({
     color: '#266E48',
     lineHeight: 14,
   },
-  pageTabs: {
+  pageTabsRow: {
     flexDirection: 'row',
-    marginTop: 8,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: '#08BF6A',
-    backgroundColor: '#FFFFFF',
+    marginTop: 10,
+    gap: 10,
   },
-  pageTab: {
+  pageTabPill: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#B6EFAE',
     backgroundColor: '#FFFFFF',
   },
-  pageTabActive: {
+  pageTabPillActive: {
+    borderColor: '#08BF6A',
     backgroundColor: '#08BF6A',
   },
-  pageTabDisabled: {
+  pageTabPillDisabled: {
     opacity: 0.45,
   },
-  pageTabText: {
-    fontSize: 13,
+  pageTabPillText: {
+    fontSize: 14,
     fontWeight: '700',
     color: '#117344',
   },
-  pageTabTextActive: {
+  pageTabPillTextActive: {
     color: '#FFFFFF',
   },
-  pageTabTextDisabled: {
+  pageTabPillTextDisabled: {
     color: '#6B9080',
   },
   pageBody: {
@@ -307,10 +316,27 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   sectionLabel: {
-    marginTop: 0,
+    marginTop: 2,
+    marginBottom: 6,
     fontSize: 12,
     fontWeight: '700',
     color: '#117344',
+  },
+  setSelectorCard: {
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#A9E9A5',
+    backgroundColor: '#F4FFF2',
+    paddingTop: 10,
+    paddingBottom: 8,
+    paddingHorizontal: 10,
+  },
+  scrollRail: {
+    alignSelf: 'stretch',
+    height: 5,
+    marginTop: 8,
+    borderRadius: 3,
+    backgroundColor: '#C4E8BC',
   },
   loadingRow: {
     marginTop: 8,
@@ -339,18 +365,18 @@ const styles = StyleSheet.create({
   setChipsScroll: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    gap: 8,
-    paddingVertical: 6,
-    paddingRight: 4,
+    gap: 12,
+    paddingBottom: 2,
+    paddingRight: 8,
   },
   setChip: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    borderRadius: 14,
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#B6EFAE',
-    maxWidth: 160,
+    maxWidth: 168,
   },
   setChipActive: {
     borderColor: '#08BF6A',

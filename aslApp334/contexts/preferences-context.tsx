@@ -16,6 +16,7 @@ type PreferencesContextValue = {
   setLetterDisplay: (mode: LetterDisplayMode) => void;
   setVideoSpeed: (speed: number) => void;
   setHandedness: (h: Handedness) => void;
+  setPracticeAutoAdvanceLetters: (on: boolean) => void;
 };
 
 const PreferencesContext = createContext<PreferencesContextValue | null>(null);
@@ -75,6 +76,17 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     [persist],
   );
 
+  const setPracticeAutoAdvanceLetters = useCallback(
+    (practiceAutoAdvanceLetters: boolean) => {
+      setPreferences((p) => {
+        const next = { ...p, practiceAutoAdvanceLetters };
+        persist(next);
+        return next;
+      });
+    },
+    [persist],
+  );
+
   const value = useMemo(
     () => ({
       preferences,
@@ -82,8 +94,16 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       setLetterDisplay,
       setVideoSpeed,
       setHandedness,
+      setPracticeAutoAdvanceLetters,
     }),
-    [preferences, hydrated, setLetterDisplay, setVideoSpeed, setHandedness],
+    [
+      preferences,
+      hydrated,
+      setLetterDisplay,
+      setVideoSpeed,
+      setHandedness,
+      setPracticeAutoAdvanceLetters,
+    ],
   );
 
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;

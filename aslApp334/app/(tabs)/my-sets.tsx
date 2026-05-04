@@ -3,6 +3,7 @@ import { router, useFocusEffect } from 'expo-router';
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -35,6 +36,8 @@ export default function MySetsScreen() {
   const [savedSets, setSavedSets] = useState<SavedWordSet[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<SavedWordSet | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   const refreshList = useCallback(async () => {
     setListLoading(true);
@@ -91,23 +94,28 @@ export default function MySetsScreen() {
     pushLesson(id);
   };
 
-  const confirmDelete = (set: SavedWordSet) => {
-    Alert.alert('Delete set', `Remove “${set.title}”?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteWordSet(set.id);
-          await refreshList();
-        },
-      },
-    ]);
-  };
+  const runDelete = useCallback(async () => {
+    if (!deleteTarget) {
+      return;
+    }
+    setDeleteBusy(true);
+    try {
+      await deleteWordSet(deleteTarget.id);
+      setDeleteTarget(null);
+      await refreshList();
+    } catch (e) {
+      Alert.alert('Could not delete', e instanceof Error ? e.message : 'Please try again.');
+    } finally {
+      setDeleteBusy(false);
+    }
+  }, [deleteTarget, refreshList]);
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled>
         <View style={styles.headerCard}>
           <Text style={styles.headerTitle}>Custom learning sets</Text>
           <Text style={styles.headerSubtitle}>
@@ -175,7 +183,7 @@ export default function MySetsScreen() {
                   <Pressable style={styles.studyBtn} onPress={() => studySaved(set.id)}>
                     <Text style={styles.studyBtnText}>Study</Text>
                   </Pressable>
-                  <Pressable style={styles.deleteBtn} onPress={() => confirmDelete(set)}>
+                  <Pressable style={styles.deleteBtn} onPress={() => setDeleteTarget(set)}>
                     <Text style={styles.deleteBtnText}>Delete</Text>
                   </Pressable>
                 </View>
@@ -184,6 +192,39 @@ export default function MySetsScreen() {
           </View>
         )}
       </ScrollView>
+
+      <Modal
+        visible={deleteTarget !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => !deleteBusy && setDeleteTarget(null)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Delete set</Text>
+            <Text style={styles.modalBody}>
+              Remove &quot;{deleteTarget?.title ?? ''}&quot;? This cannot be undone.
+            </Text>
+            <View style={styles.modalActions}>
+              <Pressable
+                style={styles.modalCancel}
+                disabled={deleteBusy}
+                onPress={() => setDeleteTarget(null)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={styles.modalDelete}
+                disabled={deleteBusy}
+                onPress={() => void runDelete()}>
+                {deleteBusy ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.modalDeleteText}>Delete</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -375,5 +416,62 @@ const styles = StyleSheet.create({
     color: '#B33A3A',
     fontWeight: '700',
     fontSize: 13,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#B6EFAE',
+    padding: 18,
+    gap: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#094C2D',
+  },
+  modalBody: {
+    fontSize: 14,
+    color: '#266E48',
+    lineHeight: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4,
+  },
+  modalCancel: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#A8DFB1',
+    alignItems: 'center',
+    backgroundColor: '#F4FFF2',
+  },
+  modalCancelText: {
+    fontWeight: '700',
+    fontSize: 14,
+    color: '#117344',
+  },
+  modalDelete: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#C44D4D',
+    minHeight: 46,
+  },
+  modalDeleteText: {
+    fontWeight: '700',
+    fontSize: 14,
+    color: '#FFFFFF',
   },
 });

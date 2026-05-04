@@ -39,7 +39,11 @@ async function readAll(): Promise<SavedWordSet[]> {
 }
 
 async function writeAll(sets: SavedWordSet[]): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(sets));
+  try {
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(sets));
+  } catch (e) {
+    throw e instanceof Error ? e : new Error('Failed to save word sets');
+  }
 }
 
 export async function loadAllSavedSets(): Promise<SavedWordSet[]> {
@@ -68,6 +72,7 @@ export async function saveNewWordSet(title: string, words: string[]): Promise<Sa
 }
 
 export async function deleteWordSet(id: string): Promise<void> {
-  const sets = (await readAll()).filter((s) => s.id !== id);
+  const target = String(id).trim();
+  const sets = (await readAll()).filter((s) => String(s.id).trim() !== target);
   await writeAll(sets);
 }

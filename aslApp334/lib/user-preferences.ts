@@ -10,12 +10,29 @@ export type UserPreferences = {
   /** Playback rate for letter videos (0.5 = half speed, 2 = double). */
   videoSpeed: number;
   handedness: Handedness;
+  /**
+   * Practice tab follow-along only: after each letter’s clip finishes (video) or a short hold (static image),
+   * advance to the next letter without tapping the arrows.
+   */
+  practiceAutoAdvanceLetters: boolean;
 };
+
+/**
+ * Base dwell time at 1× video speed for Practice static-image auto-advance (ms).
+ * Actual time is `PRACTICE_IMAGE_AUTO_ADVANCE_MS / videoSpeed`.
+ */
+export const PRACTICE_IMAGE_AUTO_ADVANCE_MS = 2500;
+
+/** Dwell time for each static letter in Practice when auto-advance is on (ms). */
+export function practiceStaticImageAdvanceMs(videoSpeed: number): number {
+  return PRACTICE_IMAGE_AUTO_ADVANCE_MS / clampSpeed(videoSpeed);
+}
 
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   letterDisplay: 'video',
   videoSpeed: 1,
   handedness: 'lefty',
+  practiceAutoAdvanceLetters: false,
 };
 
 export const VIDEO_SPEED_MIN = 0.5;
@@ -40,6 +57,9 @@ function normalize(raw: unknown): UserPreferences {
   }
   if (o.handedness === 'lefty' || o.handedness === 'righty') {
     base.handedness = o.handedness;
+  }
+  if (typeof o.practiceAutoAdvanceLetters === 'boolean') {
+    base.practiceAutoAdvanceLetters = o.practiceAutoAdvanceLetters;
   }
   return base;
 }

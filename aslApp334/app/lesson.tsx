@@ -365,18 +365,12 @@ export default function LessonScreen() {
     setFeedback(`Answer: ${quizWord}`);
   };
 
-  const isSubtabEnabled = (tabId: LessonPhase) => {
-    if (tabId === 'teach') {
-      return true;
-    }
-    if (tabId === 'practice') {
-      return phase !== 'teach';
-    }
-    if (tabId === 'quiz') {
-      return mode === 'words' && (phase === 'quiz' || phase === 'complete');
-    }
-    return phase === 'complete';
-  };
+  const visiblePhases = useMemo(
+    () => lessonSubtabs.filter((tab) => tab.id !== 'quiz' || mode === 'words'),
+    [mode],
+  );
+
+  const isSubtabEnabled = (tabId: LessonPhase) => tabId !== 'quiz' || mode === 'words';
 
   const teachWord = mode === 'words' ? lessonWords[teachIndex] ?? '' : '';
 
@@ -489,35 +483,35 @@ export default function LessonScreen() {
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.subtabRow}>
-          {lessonSubtabs
-            .filter((tab) => mode === 'words' || (tab.id !== 'quiz' && tab.id !== 'complete') || phase === 'complete')
-            .map((tab) => {
-              const active = phase === tab.id;
-              const enabled = isSubtabEnabled(tab.id);
-              return (
-                <Pressable
-                  key={tab.id}
-                  onPress={() => {
-                    if (enabled) {
-                      setPhase(tab.id);
-                    }
-                  }}
+          {visiblePhases.map((tab) => {
+            const active = phase === tab.id;
+            const enabled = isSubtabEnabled(tab.id);
+            return (
+              <Pressable
+                key={tab.id}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
+                onPress={() => {
+                  if (enabled) {
+                    setPhase(tab.id);
+                  }
+                }}
+                style={[
+                  styles.subtabButton,
+                  active && styles.subtabButtonActive,
+                  !enabled && styles.subtabButtonDisabled,
+                ]}>
+                <Text
                   style={[
-                    styles.subtabButton,
-                    active && styles.subtabButtonActive,
-                    !enabled && styles.subtabButtonDisabled,
+                    styles.subtabButtonText,
+                    active && styles.subtabButtonTextActive,
+                    !enabled && styles.subtabButtonTextDisabled,
                   ]}>
-                  <Text
-                    style={[
-                      styles.subtabButtonText,
-                      active && styles.subtabButtonTextActive,
-                      !enabled && styles.subtabButtonTextDisabled,
-                    ]}>
-                    {tab.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+                  {tab.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </ScrollView>
 
         <Pressable style={styles.secondaryButton} onPress={restartTeachMode}>

@@ -1,5 +1,5 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import {
   ActivityIndicator,
@@ -15,11 +15,16 @@ import {
 import { FollowAlongSignsPanel } from '@/components/follow-along-signs';
 import { loadAllSavedSets, type SavedWordSet } from '@/lib/saved-word-sets';
 
+type UpperPage = 'sets' | 'words';
+
 export default function CameraPracticeScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [savedSets, setSavedSets] = useState<SavedWordSet[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [upperPage, setUpperPage] = useState<UpperPage>('sets');
+  /** True while practicing a chosen word: top strip is only Back + sign lesson. */
+  const [wordLessonOpen, setWordLessonOpen] = useState(false);
 
   const refreshList = useCallback(async () => {
     setListLoading(true);
@@ -39,6 +44,8 @@ export default function CameraPracticeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      setUpperPage('sets');
+      setWordLessonOpen(false);
       void refreshList();
     }, [refreshList]),
   );
@@ -48,68 +55,144 @@ export default function CameraPracticeScreen() {
     [savedSets, selectedId],
   );
 
+  useEffect(() => {
+    if (!selectedSet && upperPage === 'words') {
+      setUpperPage('sets');
+    }
+  }, [selectedSet, upperPage]);
+
+  useEffect(() => {
+    setWordLessonOpen(false);
+  }, [selectedSet?.id]);
+
+  useEffect(() => {
+    if (upperPage === 'sets') {
+      setWordLessonOpen(false);
+    }
+  }, [upperPage]);
+
   const canUseCamera = permission?.granted === true;
+
+  const lessonUiCompact = wordLessonOpen && upperPage === 'words';
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.split}>
-        <View style={styles.topHalf}>
-          <ScrollView
-            style={styles.topScroll}
-            contentContainerStyle={styles.topScrollContent}
-            nestedScrollEnabled
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}>
-            <Text style={styles.screenTitle}>Camera practice</Text>
-            <Text style={styles.screenSubtitle}>
-              Tap a saved set, then scroll this top section if needed. The signing guide stays up here so the live camera
-              below stays visible the whole time.
-            </Text>
-
-            {listLoading ? (
+        <View style={[styles.topHalf, lessonUiCompact && styles.topHalfLessonTight]}>
+          {listLoading ? (
+            <>
+              <Text style={styles.screenTitle}>Camera practice</Text>
               <View style={styles.loadingRow}>
                 <ActivityIndicator color="#0A7D47" />
                 <Text style={styles.loadingText}>Loading sets…</Text>
               </View>
-            ) : savedSets.length === 0 ? (
+            </>
+          ) : savedSets.length === 0 ? (
+            <>
+              <Text style={styles.screenTitle}>Camera practice</Text>
               <View style={styles.emptyBox}>
-                <Text style={styles.emptyText}>
-                  No saved sets yet. Add words and save a set from the My sets tab, then come back here.
+                <Text style={styles.emptyText} numberOfLines={3}>
+                  No saved sets yet. Save a set from My sets, then return here.
                 </Text>
               </View>
-            ) : (
-              <>
-                <Text style={styles.sectionLabel}>Your sets</Text>
-                <View style={styles.setChipsWrap}>
-                  {savedSets.map((set) => {
-                    const active = set.id === selectedId;
-                    return (
-                      <TouchableOpacity
-                        key={set.id}
-                        activeOpacity={0.75}
-                        onPress={() => setSelectedId(set.id)}
-                        style={[styles.setChip, active && styles.setChipActive]}>
-                        <Text style={[styles.setChipTitle, active && styles.setChipTitleActive]} numberOfLines={1}>
-                          {set.title}
-                        </Text>
-                        <Text style={[styles.setChipMeta, active && styles.setChipMetaActive]}>
-                          {set.words.length} word{set.words.length === 1 ? '' : 's'}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+            </>
+          ) : (
+            <>
+              {!(wordLessonOpen && upperPage === 'words') ? (
+                <>
+                  <Text style={styles.screenTitle}>Camera practice</Text>
+                  <Text style={styles.screenSubtitle} numberOfLines={2}>
+                    Sets: choose a list. Words: tap a word to practice—only Back and the lesson show while you sign.
+                  </Text>
 
-                {selectedSet ? (
-                  <FollowAlongSignsPanel
-                    setId={selectedSet.id}
-                    title={selectedSet.title}
-                    words={selectedSet.words}
-                  />
+                  <View style={styles.pageTabs}>
+                    <Pressable
+                      accessibilityRole="tab"
+                      accessibilityState={{ selected: upperPage === 'sets' }}
+                      onPress={() => setUpperPage('sets')}
+                      style={[styles.pageTab, upperPage === 'sets' && styles.pageTabActive]}>
+                      <Text style={[styles.pageTabText, upperPage === 'sets' && styles.pageTabTextActive]}>Sets</Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="tab"
+                      accessibilityState={{ selected: upperPage === 'words' }}
+                      onPress={() => selectedSet && setUpperPage('words')}
+                      disabled={!selectedSet}
+                      style={[
+                        styles.pageTab,
+                        upperPage === 'words' && styles.pageTabActive,
+                        !selectedSet && styles.pageTabDisabled,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.pageTabText,
+                          upperPage === 'words' && styles.pageTabTextActive,
+                          !selectedSet && styles.pageTabTextDisabled,
+                        ]}>
+                        Words
+                      </Text>
+                    </Pressable>
+                  </View>
+                </>
+              ) : (
+                <View style={styles.lessonHeader}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Back to word list"
+                    onPress={() => setWordLessonOpen(false)}
+                    style={styles.lessonBack}
+                    hitSlop={8}>
+                    <Text style={styles.lessonBackText}>‹ Back</Text>
+                  </Pressable>
+                </View>
+              )}
+
+              <View style={styles.pageBody}>
+                {upperPage === 'sets' ? (
+                  <>
+                    <Text style={styles.sectionLabel}>Your saved sets</Text>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      nestedScrollEnabled
+                      keyboardShouldPersistTaps="handled"
+                      contentContainerStyle={styles.setChipsScroll}>
+                      {savedSets.map((set) => {
+                        const active = set.id === selectedId;
+                        return (
+                          <TouchableOpacity
+                            key={set.id}
+                            activeOpacity={0.75}
+                            onPress={() => {
+                              setSelectedId(set.id);
+                              setUpperPage('words');
+                            }}
+                            style={[styles.setChip, active && styles.setChipActive]}>
+                            <Text style={[styles.setChipTitle, active && styles.setChipTitleActive]} numberOfLines={1}>
+                              {set.title}
+                            </Text>
+                            <Text style={[styles.setChipMeta, active && styles.setChipMetaActive]}>
+                              {set.words.length} word{set.words.length === 1 ? '' : 's'}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </>
+                ) : selectedSet ? (
+                  <View style={styles.followAlongHost}>
+                    <FollowAlongSignsPanel
+                      setId={selectedSet.id}
+                      title={selectedSet.title}
+                      words={selectedSet.words}
+                      lessonMode={wordLessonOpen}
+                      onBeginLesson={() => setWordLessonOpen(true)}
+                    />
+                  </View>
                 ) : null}
-              </>
-            )}
-          </ScrollView>
+              </View>
+            </>
+          )}
         </View>
 
         <View style={styles.bottomHalf}>
@@ -148,27 +231,26 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   topHalf: {
-    flex: 1,
+    flex: 10,
     minHeight: 0,
     zIndex: 2,
     elevation: 4,
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingHorizontal: 12,
+    paddingTop: 6,
+    paddingBottom: 6,
     borderBottomWidth: 2,
     borderBottomColor: '#A9E9A5',
     backgroundColor: '#D7F58B',
     overflow: 'hidden',
   },
-  topScroll: {
-    flex: 1,
-  },
-  topScrollContent: {
-    paddingBottom: 12,
-    flexGrow: 1,
+  /** Slightly tighter padding during lesson so the sign can use the fixed top strip only (camera split unchanged). */
+  topHalfLessonTight: {
+    paddingTop: 4,
+    paddingBottom: 4,
+    paddingHorizontal: 8,
   },
   bottomHalf: {
-    flex: 1,
+    flex: 12,
     minHeight: 0,
     zIndex: 1,
     elevation: 2,
@@ -176,24 +258,62 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   screenTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '700',
     color: '#0C6E3E',
   },
   screenSubtitle: {
-    marginTop: 6,
-    fontSize: 13,
+    marginTop: 4,
+    fontSize: 11,
     color: '#266E48',
-    lineHeight: 18,
+    lineHeight: 14,
+  },
+  pageTabs: {
+    flexDirection: 'row',
+    marginTop: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#08BF6A',
+    backgroundColor: '#FFFFFF',
+  },
+  pageTab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  pageTabActive: {
+    backgroundColor: '#08BF6A',
+  },
+  pageTabDisabled: {
+    opacity: 0.45,
+  },
+  pageTabText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#117344',
+  },
+  pageTabTextActive: {
+    color: '#FFFFFF',
+  },
+  pageTabTextDisabled: {
+    color: '#6B9080',
+  },
+  pageBody: {
+    flex: 1,
+    minHeight: 0,
+    marginTop: 8,
   },
   sectionLabel: {
-    marginTop: 12,
-    fontSize: 14,
+    marginTop: 0,
+    fontSize: 12,
     fontWeight: '700',
     color: '#117344',
   },
   loadingRow: {
-    marginTop: 16,
+    marginTop: 8,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
@@ -203,33 +323,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   emptyBox: {
-    marginTop: 14,
-    padding: 14,
-    borderRadius: 14,
+    marginTop: 8,
+    padding: 10,
+    borderRadius: 12,
     backgroundColor: '#F4FFF2',
     borderWidth: 2,
     borderColor: '#A9E9A5',
   },
   emptyText: {
     color: '#266E48',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 12,
+    lineHeight: 16,
     textAlign: 'center',
   },
-  setChipsWrap: {
+  setChipsScroll: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    paddingVertical: 10,
+    alignItems: 'stretch',
+    gap: 8,
+    paddingVertical: 6,
+    paddingRight: 4,
   },
   setChip: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#B6EFAE',
-    maxWidth: 200,
+    maxWidth: 160,
   },
   setChipActive: {
     borderColor: '#08BF6A',
@@ -237,7 +358,7 @@ const styles = StyleSheet.create({
   },
   setChipTitle: {
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 13,
     color: '#117344',
   },
   setChipTitleActive: {
@@ -250,6 +371,24 @@ const styles = StyleSheet.create({
   },
   setChipMetaActive: {
     color: '#1F6D43',
+  },
+  followAlongHost: {
+    flex: 1,
+    minHeight: 0,
+  },
+  lessonHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  lessonBack: {
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  lessonBackText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#056136',
   },
   cameraWrap: {
     flex: 1,

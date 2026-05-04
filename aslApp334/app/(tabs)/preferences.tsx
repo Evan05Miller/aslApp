@@ -3,13 +3,20 @@ import { SafeAreaView, ScrollView, StyleSheet, Switch, Text, View } from 'react-
 
 import { usePreferences } from '@/contexts/preferences-context';
 import {
+  PRACTICE_IMAGE_AUTO_ADVANCE_MS,
   VIDEO_SPEED_MAX,
   VIDEO_SPEED_MIN,
   VIDEO_SPEED_STEP,
 } from '@/lib/user-preferences';
 
 export default function PreferencesScreen() {
-  const { preferences, setLetterDisplay, setVideoSpeed, setHandedness } = usePreferences();
+  const {
+    preferences,
+    setLetterDisplay,
+    setVideoSpeed,
+    setHandedness,
+    setPracticeAutoAdvanceLetters,
+  } = usePreferences();
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -46,7 +53,10 @@ export default function PreferencesScreen() {
 
         <View style={styles.card}>
           <Text style={styles.label}>Video speed</Text>
-          <Text style={styles.hint}>Only affects letter videos. Drag to slow down or speed up.</Text>
+          <Text style={styles.hint}>
+            Controls letter clip playback. With static images, it also sets how long each letter stays on screen during
+            Practice auto-advance (baseline {PRACTICE_IMAGE_AUTO_ADVANCE_MS / 1000} s at 1×; slower = longer).
+          </Text>
           <Text style={styles.speedValue}>{preferences.videoSpeed.toFixed(2)}×</Text>
           <Slider
             style={styles.slider}
@@ -58,11 +68,35 @@ export default function PreferencesScreen() {
             minimumTrackTintColor="#08BF6A"
             maximumTrackTintColor="#C7EFC0"
             thumbTintColor="#0A7D47"
-            disabled={preferences.letterDisplay !== 'video'}
           />
           <View style={styles.sliderEnds}>
             <Text style={styles.sliderEndLabel}>{VIDEO_SPEED_MIN}×</Text>
             <Text style={styles.sliderEndLabel}>{VIDEO_SPEED_MAX}×</Text>
+          </View>
+        </View>
+
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <View style={styles.rowText}>
+              <Text style={styles.label}>Practice: auto-advance letters</Text>
+              <Text style={styles.hint}>
+                Only affects the Practice tab follow-along (word signs above the camera). When on, each letter video
+                plays once and then moves to the next sign; with static images, dwell time follows the Video speed
+                setting (see above). Turn off to step through only with the arrow buttons.
+              </Text>
+            </View>
+            <View style={styles.switchCol}>
+              <Text style={styles.switchCaption}>Manual</Text>
+              <Switch
+                value={preferences.practiceAutoAdvanceLetters}
+                onValueChange={setPracticeAutoAdvanceLetters}
+                trackColor={{ false: '#A8DFB1', true: '#08BF6A' }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor="#A8DFB1"
+                accessibilityLabel="Auto-advance letters in Practice follow-along"
+              />
+              <Text style={styles.switchCaption}>Auto</Text>
+            </View>
           </View>
         </View>
 

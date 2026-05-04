@@ -1,4 +1,4 @@
-import { useEvent } from 'expo';
+import { useEvent, useEventListener } from 'expo';
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useMemo } from 'react';
@@ -17,6 +17,13 @@ type Props = {
   letter: string;
   variant: AslLetterVariant;
   style: StyleProp<ViewStyle>;
+  /**
+   * When false, the letter video plays once (no loop). Defaults to true.
+   * Used by Practice follow-along when auto-advance is on.
+   */
+  loopVideo?: boolean;
+  /** Fired when a non-looping letter video reaches the end. */
+  onVideoPlayToEnd?: () => void;
 };
 
 type LetterVideoProps = {
@@ -24,9 +31,11 @@ type LetterVideoProps = {
   playbackRate: number;
   style: StyleProp<ViewStyle>;
   mirror: boolean;
+  loopVideo: boolean;
+  onPlayToEnd?: () => void;
 };
 
-function LetterSignVideo({ videoSource, playbackRate, style, mirror }: LetterVideoProps) {
+function LetterSignVideo({ videoSource, playbackRate, style, mirror, loopVideo, onPlayToEnd }: LetterVideoProps) {
   const { width, height, boxStyle } = useMemo(() => {
     const f = StyleSheet.flatten(style) as ViewStyle;
     const w = typeof f.width === 'number' ? f.width : 190;
@@ -48,7 +57,7 @@ function LetterSignVideo({ videoSource, playbackRate, style, mirror }: LetterVid
   }, [style, mirror]);
 
   const player = useVideoPlayer(videoSource, (p) => {
-    p.loop = true;
+    p.loop = loopVideo;
     p.muted = true;
     p.preservesPitch = true;
     p.playbackRate = playbackRate;
@@ -62,8 +71,18 @@ function LetterSignVideo({ videoSource, playbackRate, style, mirror }: LetterVid
   });
 
   useEffect(() => {
+    player.loop = loopVideo;
+  }, [player, loopVideo]);
+
+  useEventListener(player, 'playToEnd', () => {
+    if (!loopVideo) {
+      onPlayToEnd?.();
+    }
+  });
+
+  useEffect(() => {
     if (status === 'readyToPlay') {
-      player.loop = true;
+      player.loop = loopVideo;
       player.muted = true;
       player.preservesPitch = true;
       player.playbackRate = playbackRate;
@@ -72,7 +91,7 @@ function LetterSignVideo({ videoSource, playbackRate, style, mirror }: LetterVid
       }
       player.play();
     }
-  }, [status, player, playbackRate]);
+  }, [status, player, playbackRate, loopVideo]);
 
   useEffect(() => {
     player.playbackRate = playbackRate;
@@ -94,7 +113,7 @@ function LetterSignVideo({ videoSource, playbackRate, style, mirror }: LetterVid
         pointerEvents="none"
         playsInline
         onFirstFrameRender={() => {
-          player.loop = true;
+          player.loop = loopVideo;
           player.muted = true;
           player.playbackRate = playbackRate;
           if (Platform.OS === 'ios') {
@@ -140,7 +159,7 @@ function LetterSignImage({ source, style, mirror }: LetterImageProps) {
 /**
  * Renders an ASL letter using user preferences (video vs image, speed, handedness mirror).
  */
-export function AslLetterSign({ letter, variant, style }: Props) {
+export function AslLetterSign({ letter, variant, style, loopVideo = true, onVideoPlayToEnd }: Props) {
   const { preferences } = usePreferences();
   const L = letter.toUpperCase();
   const mirror = preferences.handedness === 'righty';
@@ -157,6 +176,8 @@ export function AslLetterSign({ letter, variant, style }: Props) {
         playbackRate={preferences.videoSpeed}
         style={style}
         mirror={mirror}
+        loopVideo={loopVideo}
+        onPlayToEnd={onVideoPlayToEnd}
       />
     );
   }

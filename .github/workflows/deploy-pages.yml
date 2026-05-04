@@ -5,8 +5,10 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
+# Build uploads an artifact; deploy downloads it — both need `actions` on GITHUB_TOKEN.
 permissions:
   contents: read
+  actions: write
 
 concurrency:
   group: pages
@@ -54,6 +56,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     permissions:
       contents: read
+      actions: read
       pages: write
       id-token: write
 

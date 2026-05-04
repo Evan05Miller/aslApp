@@ -1,0 +1,4 @@
+{
+  "typescript.tsdk": "aslApp334/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}

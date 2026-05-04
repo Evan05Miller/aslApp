@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "esModuleInterop": true,
+    "jsx": "react-native",
+    "lib": ["DOM", "ESNext"],
+    "module": "preserve",
+    "moduleDetection": "force",
+    "moduleResolution": "bundler",
+    "customConditions": ["react-native"],
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ESNext",
+    "baseUrl": "aslApp334",
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "aslApp334/**/*.ts",
+    "aslApp334/**/*.tsx",
+    "aslApp334/.expo/types/**/*.ts",
+    "aslApp334/expo-env.d.ts"
+  ],
+  "exclude": ["aslApp334/node_modules"]
+}

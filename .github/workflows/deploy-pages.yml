@@ -5,9 +5,10 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
-# Build uploads an artifact; deploy downloads it — both need `actions` on GITHUB_TOKEN.
 permissions:
   contents: read
+  pages: write
+  id-token: write
   actions: write
 
 concurrency:
@@ -15,8 +16,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,38 +47,13 @@ jobs:
           cp dist/index.html dist/404.html
           touch dist/.nojekyll
 
-      - name: Upload build output
-        uses: actions/upload-artifact@v4
-        with:
-          name: expo-web-dist
-          path: aslApp334/dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    permissions:
-      contents: read
-      actions: read
-      pages: write
-      id-token: write
-
-    steps:
-      - name: Download build output
-        uses: actions/download-artifact@v4
-        with:
-          name: expo-web-dist
-          path: dist-site
-
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist-site
+          path: aslApp334/dist
 
       - name: Deploy to GitHub Pages
         id: deployment

@@ -117,15 +117,15 @@ export default function MySetsScreen() {
         keyboardShouldPersistTaps="handled"
         nestedScrollEnabled>
         <View style={styles.headerCard}>
-          <Text style={styles.headerTitle}>Custom learning sets</Text>
+          <Text style={styles.headerTitle}>Custom Learning Sets</Text>
           <Text style={styles.headerSubtitle}>
-            Build a word list, practice right away, or save a set to restudy later.
+            Build a word list to practice right away or save a set to restudy later.
           </Text>
         </View>
 
         <Text style={styles.sectionLabel}>Create a set</Text>
         <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Set name (when saving)</Text>
+          <Text style={styles.fieldLabel}>Set name</Text>
           <TextInput
             value={titleInput}
             onChangeText={setTitleInput}
@@ -249,12 +249,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 24,
     fontWeight: '700',
+    textAlign: 'center',
   },
   headerSubtitle: {
     color: '#EAFEF1',
     marginTop: 4,
     fontSize: 14,
     lineHeight: 20,
+    textAlign: 'center',
   },
   sectionLabel: {
     fontSize: 18,
@@ -321,7 +323,6 @@ const styles = StyleSheet.create({
     color: '#0A7D47',
     fontWeight: '700',
     fontSize: 13,
-    textAlign: 'center',
   },
   primaryButton: {
     flex: 1,
@@ -336,7 +337,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 13,
-    textAlign: 'center',
   },
   loadingRow: {
     flexDirection: 'row',
@@ -359,7 +359,6 @@ const styles = StyleSheet.create({
     color: '#266E48',
     fontSize: 14,
     lineHeight: 20,
-    textAlign: 'center',
   },
   savedList: {
     gap: 10,

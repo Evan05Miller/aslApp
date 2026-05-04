@@ -5,11 +5,7 @@ import { useEffect, useMemo } from 'react';
 import { Platform, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 
 import { usePreferences } from '@/contexts/preferences-context';
-import {
-  LETTER_VIDEO_SOURCES,
-  letterImages,
-  practiceLetterImages,
-} from '@/constants/asl-lessons';
+import { LETTER_VIDEO_SOURCES, letterImages } from '@/constants/asl-lessons';
 
 export type AslLetterVariant = 'teach' | 'practice';
 
@@ -159,7 +155,7 @@ function LetterSignImage({ source, style, mirror }: LetterImageProps) {
 /**
  * Renders an ASL letter using user preferences (video vs image, speed, handedness mirror).
  */
-export function AslLetterSign({ letter, variant, style, loopVideo = true, onVideoPlayToEnd }: Props) {
+export function AslLetterSign({ letter, variant: _variant, style, loopVideo = true, onVideoPlayToEnd }: Props) {
   const { preferences } = usePreferences();
   const L = letter.toUpperCase();
   const mirror = preferences.handedness === 'righty';
@@ -182,8 +178,7 @@ export function AslLetterSign({ letter, variant, style, loopVideo = true, onVide
     );
   }
 
-  const map = variant === 'teach' ? letterImages : practiceLetterImages;
-  const img = map[L];
+  const img = letterImages[L];
   if (img === undefined) {
     return null;
   }

@@ -57,38 +57,8 @@ export const LETTER_VIDEO_SOURCES: Record<string, number> = {
   Z: require('@/assets/images/aslLetterVideos/letter-z.mp4'),
 };
 
-/** Static teach images (Preferences → static images). */
+/** Static letter images — `asl Letters Practice` for teach and practice (Preferences → static images). */
 export const letterImages: Record<string, number> = {
-  A: require('@/assets/images/aslLetters/A.png'),
-  B: require('@/assets/images/aslLetters/B.png'),
-  C: require('@/assets/images/aslLetters/C.png'),
-  D: require('@/assets/images/aslLetters/D.png'),
-  E: require('@/assets/images/aslLetters/E.png'),
-  F: require('@/assets/images/aslLetters/F.png'),
-  G: require('@/assets/images/aslLetters/G.png'),
-  H: require('@/assets/images/aslLetters/H.png'),
-  I: require('@/assets/images/aslLetters/I.png'),
-  J: require('@/assets/images/aslLetters/J.png'),
-  K: require('@/assets/images/aslLetters/K.png'),
-  L: require('@/assets/images/aslLetters/L.png'),
-  M: require('@/assets/images/aslLetters/M.png'),
-  N: require('@/assets/images/aslLetters/N.png'),
-  O: require('@/assets/images/aslLetters/O.png'),
-  P: require('@/assets/images/aslLetters/P.png'),
-  Q: require('@/assets/images/aslLetters/Q.png'),
-  R: require('@/assets/images/aslLetters/R.png'),
-  S: require('@/assets/images/aslLetters/S.png'),
-  T: require('@/assets/images/aslLetters/T.png'),
-  U: require('@/assets/images/aslLetters/U.png'),
-  V: require('@/assets/images/aslLetters/V.png'),
-  W: require('@/assets/images/aslLetters/W.png'),
-  X: require('@/assets/images/aslLetters/X.png'),
-  Y: require('@/assets/images/aslLetters/Y.png'),
-  Z: require('@/assets/images/aslLetters/Z.png'),
-};
-
-/** Static practice images (Preferences → static images). */
-export const practiceLetterImages: Record<string, number> = {
   A: require('@/assets/images/asl Letters Practice/A Practice.png'),
   B: require('@/assets/images/asl Letters Practice/B Practice.png'),
   C: require('@/assets/images/asl Letters Practice/C Practice.png'),

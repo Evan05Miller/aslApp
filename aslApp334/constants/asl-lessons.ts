@@ -14,12 +14,25 @@ export type WordLesson = {
   goal: string;
 };
 
+export type GrammarTeachStep = {
+  id: string;
+  content: string;
+  label?: string;
+};
+
+export type GrammarExercise = {
+  prompt: string;
+  acceptedAnswers: string[];
+  hint?: string;
+  conjugationHint?: string;
+};
+
 export type GrammarLesson = {
   id: string;
   title: string;
-  rule: string;
-  examples: string[];
-  exercises: { prompt: string; answer: string }[];
+  subtitle: string;
+  teachSteps: GrammarTeachStep[];
+  exercises: GrammarExercise[];
 };
 
 export type Lesson = LetterLesson | WordLesson | GrammarLesson;
@@ -109,31 +122,95 @@ export const grammarLessons: GrammarLesson[] = [
   {
     id: 'grammar-1',
     title: 'Grammar Basics 1',
-    rule: 'ASL often uses topic-comment order. Start with the topic, then add what you want to say about it.',
-    examples: ['TOPIC: BOOK, COMMENT: I READ', 'TOPIC: WEATHER, COMMENT: HOT TODAY'],
+    subtitle: 'ASL often uses topic-comment order. Start with the topic, then add what you want to say about it.',
+    teachSteps: [
+      {
+        id: 't1',
+        content: 'ASL is NOT signed English. One of the most common misconceptions about American Sign Language is that it\'s just English spoken with your hands. In reality, ASL is a fully independent language with its own grammar, vocabulary, and structure.'
+      },
+      {
+        id: 't2',
+        content: 'ASL has its own grammar rules - including how signs are built, what they mean, the order they appear in (called syntax), and how context changes meaning.'
+      },
+      {
+        id: 't3',
+        content: 'Syntax refers to how signs are arranged in a sentence. ASL doesn\'t use just one fixed order - it uses multiple sign orders depending on context.'
+      },
+      {
+        id: 't4',
+        content: 'Topicalization is one of ASL\'s most important structures. It means placing the topic of the sentence at the beginning, followed by a comment about it.'
+      },
+      {
+        id: 't5',
+        label: 'Example',
+        content: 'WEATHER, HOT TODAY\n\nIn English: "The weather is hot today."\nWEATHER is the topic. HOT TODAY is the comment.'
+      },
+      {
+        id: 't6',
+        label: 'Example',
+        content: 'CAT, ORANGE, BIG, I SEE\n\nIn English: "I see a big orange cat."\nThe topic (CAT) and its descriptors come first, then the comment.'
+      },
+      {
+        id: 't7',
+        label: 'Example',
+        content: 'MY SISTER, TEACHER\n\nIn English: "My sister is a teacher."\nEstablish the topic first, then state what is true about it.'
+      },
+    ],
     exercises: [
-      { prompt: 'Reorder in ASL style: I READ BOOK', answer: 'BOOK I READ' },
-      { prompt: 'Reorder in ASL style: TODAY HOT WEATHER', answer: 'WEATHER HOT TODAY' },
+      {
+        prompt: 'Reorder in ASL style: I READ BOOK',
+        acceptedAnswers: ['BOOK I READ', 'BOOK, I READ', 'BOOK READ I'],
+        hint: 'Think about what the topic is - the thing being acted on.'
+      },
+      {
+        prompt: 'How would you sign "The weather is hot today" in ASL?',
+        acceptedAnswers: ['WEATHER HOT TODAY', 'WEATHER, HOT TODAY', 'WEATHER TODAY HOT'],
+        hint: 'Place the topic (WEATHER) first.'
+      },
+      {
+        prompt: 'Reorder in ASL style: SHE HAS A RED CAR',
+        acceptedAnswers: ['CAR RED SHE HAVE', 'CAR, RED, SHE HAVE', 'CAR RED HAVE SHE'],
+        hint: 'Start with the object (CAR), then describe it, then state who has it.',
+        conjugationHint: 'ASL doesn\'t conjugate verbs - use HAVE instead of HAS regardless of the subject.',
+      },
+      {
+        prompt: 'What term describes placing the topic first in an ASL sentence?',
+        acceptedAnswers: ['topicalization', 'TOPICALIZATION', 'topic first', 'topic-comment'],
+        hint: 'It starts with "topic..."'
+      },
+      {
+        prompt: 'Reorder in ASL style: I WANT NEW SHOES',
+        acceptedAnswers: ['SHOES NEW I WANT', 'SHOES, NEW, I WANT', 'SHOES NEW WANT I'],
+        hint: 'The item being wanted is the topic.'
+      },
     ],
   },
   {
     id: 'grammar-2',
     title: 'Grammar Basics 2',
-    rule: 'Use facial expression with yes/no questions and keep sentence structure simple.',
-    examples: ['YOU LIKE COFFEE?', 'YOU READY?'],
+    subtitle: 'Use facial expression with yes/no questions and keep sentence structure simple.',
+    teachSteps: [
+      { id: 't1', content: 'Yes/no questions in ASL are marked by facial expression - raise your eyebrows while signing the question.' },
+      { id: 't2', label: 'Example', content: 'YOU LIKE COFFEE?\n\nRaise eyebrows on the whole phrase to signal a yes/no question.' },
+      { id: 't3', label: 'Example', content: 'YOU READY?\n\nNo need for "are" - just sign YOU READY with raised eyebrows.' },
+    ],
     exercises: [
-      { prompt: 'Turn into ASL-style question: DO YOU LIKE COFFEE', answer: 'YOU LIKE COFFEE?' },
-      { prompt: 'Turn into ASL-style question: ARE YOU READY', answer: 'YOU READY?' },
+      { prompt: 'Turn into ASL-style question: DO YOU LIKE COFFEE', acceptedAnswers: ['YOU LIKE COFFEE?', 'YOU LIKE COFFEE', 'COFFEE YOU LIKE', 'COFFEE YOU LIKE?'] },
+      { prompt: 'Turn into ASL-style question: ARE YOU READY', acceptedAnswers: ['YOU READY?', 'YOU READY'] },
     ],
   },
   {
     id: 'grammar-3',
     title: 'Grammar Basics 3',
-    rule: 'Time signs usually come first so the listener knows when the action happens.',
-    examples: ['YESTERDAY I PRACTICE', 'TOMORROW WE STUDY ASL'],
+    subtitle: 'Time signs usually come first so the listener knows when the action happens.',
+    teachSteps: [
+      { id: 't1', content: 'In ASL, time signs (YESTERDAY, TOMORROW, NOW, LATER) are placed at the beginning of a sentence to establish a time frame before the action.' },
+      { id: 't2', label: 'Example', content: 'YESTERDAY I PRACTICE\n\nIn English: "I practiced yesterday."' },
+      { id: 't3', label: 'Example', content: 'TOMORROW WE STUDY ASL\n\nIn English: "We will study ASL tomorrow."' },
+    ],
     exercises: [
-      { prompt: 'Put time first: I PRACTICE YESTERDAY', answer: 'YESTERDAY I PRACTICE' },
-      { prompt: 'Put time first: WE STUDY ASL TOMORROW', answer: 'TOMORROW WE STUDY ASL' },
+      { prompt: 'Put time first: I PRACTICE YESTERDAY', acceptedAnswers: ['YESTERDAY I PRACTICE'] },
+      { prompt: 'Put time first: WE STUDY ASL TOMORROW', acceptedAnswers: ['TOMORROW WE STUDY ASL', 'TOMORROW WE ASL STUDY'] },
     ],
   },
 ];

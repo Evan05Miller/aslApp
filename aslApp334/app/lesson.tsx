@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,11 +14,34 @@ import {
 } from 'react-native';
 
 import { AslLetterSign } from '@/components/asl-letter-sign';
-import { LearnMode, WordLesson, getLessonsForMode, lessonSubtabs } from '@/constants/asl-lessons';
+import { GrammarExercise, LearnMode, WordLesson, getLessonsForMode, lessonSubtabs } from '@/constants/asl-lessons';
 import { CUSTOM_WORD_LESSON_ID, getCustomWordSet } from '@/constants/custom-word-set';
 import { getWordSetById } from '@/lib/saved-word-sets';
 
 type LessonPhase = 'teach' | 'practice' | 'quiz' | 'complete';
+type AnswerStatus = 'idle' | 'correct' | 'incorrect';
+
+const ENGLISH_FILLER_WORDS = ['is', 'are', 'the', 'a', 'an', 'it', 'do', 'does', 'be', 'was', 'were', 'has', 'to'];
+
+function checkAnswer(input: string, acceptedAnswers: string[]): boolean {
+  const normalize = (s: string) =>
+    s.trim().toUpperCase().replace(/,/g, '').replace(/\s+/g, ' ');
+  return acceptedAnswers.some((a) => normalize(a) === normalize(input));
+}
+
+function getWrongAnswerFeedback(input: string, exercise?: GrammarExercise): string {
+  const upperWords = input.toUpperCase().split(/\s+/);
+
+  if (exercise?.conjugationHint && upperWords.includes('HAS')) {
+    return exercise.conjugationHint;
+  }
+
+  const fillers = ENGLISH_FILLER_WORDS.filter((w) => upperWords.includes(w.toUpperCase()));
+  if (fillers.length > 0) {
+    return `ASL doesn't use words like "${fillers[0].toLowerCase()}" - drop English filler words and focus on the core signs.`;
+  }
+  return 'Not quite - check the order and try again.';
+}
 
 export default function LessonScreen() {
   const params = useLocalSearchParams<{
@@ -147,10 +171,13 @@ export default function LessonScreen() {
   const [practiceAnswerRevealed, setPracticeAnswerRevealed] = useState(false);
   const [quizAnswerRevealed, setQuizAnswerRevealed] = useState(false);
   const [wordLetterIndex, setWordLetterIndex] = useState(0);
+  const [practiceAnswerStatus, setPracticeAnswerStatus] = useState<AnswerStatus>('idle');
+  const [practiceFeedbackMessage, setPracticeFeedbackMessage] = useState('');
+  const [maxGrammarPhaseReached, setMaxGrammarPhaseReached] = useState(0);
 
   const lessonLetters = mode === 'letters' && 'letters' in activeLesson ? activeLesson.letters : [];
   const lessonWords = mode === 'words' && 'words' in activeLesson ? activeLesson.words : [];
-  const lessonExamples = mode === 'grammar' && 'examples' in activeLesson ? activeLesson.examples : [];
+  const lessonTeachSteps = mode === 'grammar' && 'teachSteps' in activeLesson ? activeLesson.teachSteps : [];
   const lessonExercises = mode === 'grammar' && 'exercises' in activeLesson ? activeLesson.exercises : [];
 
   const shuffleArray = (items: string[]) => {
@@ -167,9 +194,11 @@ export default function LessonScreen() {
       ? lessonLetters
       : mode === 'words'
       ? lessonWords
-      : lessonExamples;
+      : lessonTeachSteps;
   const practiceUnits =
-    mode === 'grammar' ? lessonExercises.map((exercise) => exercise.answer) : practiceSequence;
+    mode === 'grammar' ? lessonExercises.map((exercise) => exercise.acceptedAnswers[0] ?? '') : practiceSequence;
+  const currentGrammarTeachStep = lessonTeachSteps[teachIndex];
+  const currentGrammarExercise = lessonExercises[practiceIndex];
   const teachLetter = lessonLetters[teachIndex] ?? lessonLetters[0] ?? 'A';
   const practiceLetter =
     mode === 'letters'
@@ -197,7 +226,7 @@ export default function LessonScreen() {
         ? shuffleArray(letters)
         : mode === 'words'
         ? shuffleArray(words)
-        : exercises.map((exercise) => exercise.answer);
+        : exercises.map((exercise) => exercise.acceptedAnswers[0] ?? '');
     const shuffledQuiz = mode === 'words' ? shuffleArray(words) : [];
     setPracticeSequence(shuffledPractice);
     setQuizSequence(shuffledQuiz);
@@ -205,6 +234,8 @@ export default function LessonScreen() {
 
   useEffect(() => {
     setPracticeAnswerRevealed(false);
+    setPracticeAnswerStatus('idle');
+    setPracticeFeedbackMessage('');
   }, [practiceIndex, phase]);
 
   useEffect(() => {
@@ -218,6 +249,19 @@ export default function LessonScreen() {
   }, [mode, phase, teachIndex, practiceIndex, quizIndex]);
 
   const progress = useMemo(() => {
+    if (mode === 'grammar') {
+      const total = lessonTeachSteps.length + lessonExercises.length + 1;
+      if (total <= 0) {
+        return 1;
+      }
+      const viewedTeachSteps =
+        phase === 'teach'
+          ? Math.min(teachIndex + 1, lessonTeachSteps.length)
+          : lessonTeachSteps.length;
+      const completedScreen = phase === 'complete' ? 1 : 0;
+      return Math.min((viewedTeachSteps + practiceCorrect + completedScreen) / total, 1);
+    }
+
     const teachWeight = mode === 'words' ? 0.35 : 0.5;
     const practiceWeight = mode === 'words' ? 0.35 : 0.5;
     const quizWeight = mode === 'words' ? 0.3 : 0;
@@ -245,7 +289,18 @@ export default function LessonScreen() {
       return 1;
     }
     return Math.min(teachProgress + practiceProgress + quizProgress, 1);
-  }, [mode, phase, teachIndex, teachUnits.length, practiceTotal, practiceCorrect, quizTotal, quizCorrect]);
+  }, [
+    mode,
+    phase,
+    teachIndex,
+    teachUnits.length,
+    lessonTeachSteps.length,
+    lessonExercises.length,
+    practiceTotal,
+    practiceCorrect,
+    quizTotal,
+    quizCorrect,
+  ]);
 
   const restartLesson = () => {
     const shuffledPractice =
@@ -253,7 +308,7 @@ export default function LessonScreen() {
         ? shuffleArray(lessonLetters)
         : mode === 'words'
         ? shuffleArray(lessonWords)
-        : lessonExercises.map((exercise) => exercise.answer);
+        : lessonExercises.map((exercise) => exercise.acceptedAnswers[0] ?? '');
     const shuffledQuiz = mode === 'words' ? shuffleArray(lessonWords) : [];
 
     setPhase('teach');
@@ -269,6 +324,9 @@ export default function LessonScreen() {
     setPracticeAnswerRevealed(false);
     setQuizAnswerRevealed(false);
     setWordLetterIndex(0);
+    setPracticeAnswerStatus('idle');
+    setPracticeFeedbackMessage('');
+    setMaxGrammarPhaseReached(0);
     setFeedback('Teaching started. Tap next to continue through the lesson.');
   };
 
@@ -278,6 +336,8 @@ export default function LessonScreen() {
     setPracticeAnswerRevealed(false);
     setQuizAnswerRevealed(false);
     setWordLetterIndex(0);
+    setPracticeAnswerStatus('idle');
+    setPracticeFeedbackMessage('');
     setFeedback('Teaching from the start. Tap Next when you are ready.');
   };
 
@@ -286,6 +346,9 @@ export default function LessonScreen() {
       setTeachIndex((current) => current + 1);
       return;
     }
+    if (mode === 'grammar') {
+      setMaxGrammarPhaseReached((current) => Math.max(current, 1));
+    }
     setPhase('practice');
     setFeedback('Practice time! Enter your answer and check feedback.');
   };
@@ -293,14 +356,35 @@ export default function LessonScreen() {
   const normalize = (value: string) => value.trim().toUpperCase();
 
   const checkPracticeAnswer = () => {
-    const expected = normalize(practiceUnits[practiceIndex] ?? '');
+    const expectedAnswer =
+      mode === 'grammar'
+        ? currentGrammarExercise?.acceptedAnswers[0] ?? ''
+        : practiceUnits[practiceIndex] ?? '';
+    const expected = normalize(expectedAnswer);
     const actual = normalize(practiceInput);
     if (!actual) {
       setFeedback('Enter an answer first.');
+      setPracticeAnswerStatus('idle');
+      setPracticeFeedbackMessage('');
       return;
     }
 
-    if (actual === expected) {
+    const isCorrect =
+      mode === 'grammar'
+        ? checkAnswer(practiceInput, currentGrammarExercise?.acceptedAnswers ?? [])
+        : checkAnswer(practiceInput, [expectedAnswer]);
+
+    if (isCorrect) {
+      if (mode === 'grammar') {
+        if (practiceAnswerStatus !== 'correct') {
+          setPracticeCorrect((current) => current + 1);
+        }
+        setPracticeAnswerStatus('correct');
+        setPracticeFeedbackMessage('Correct answer.');
+        setFeedback('Correct! Nice work.');
+        return;
+      }
+
       const nextCorrect = practiceCorrect + 1;
       setPracticeCorrect(nextCorrect);
       setFeedback('Nice work! That is correct.');
@@ -321,27 +405,56 @@ export default function LessonScreen() {
       return;
     }
 
-    setFeedback(`Not quite. Try again. Hint: ${expected.length} characters.`);
+    setPracticeAnswerStatus('incorrect');
+    if (mode === 'grammar') {
+      const wrongAnswerFeedback = getWrongAnswerFeedback(practiceInput, currentGrammarExercise);
+      setPracticeFeedbackMessage(wrongAnswerFeedback);
+      setFeedback(wrongAnswerFeedback);
+    } else {
+      setFeedback(`Not quite. Try again. Hint: ${expected.length} characters.`);
+    }
   };
 
   const revealPracticeAnswer = () => {
-    const answer = practiceUnits[practiceIndex] ?? '';
+    const answer =
+      mode === 'grammar'
+        ? currentGrammarExercise?.acceptedAnswers[0] ?? ''
+        : practiceUnits[practiceIndex] ?? '';
     setPracticeAnswerRevealed(true);
     setFeedback(`Answer: ${answer}`);
+  };
+
+  const nextPracticeStep = () => {
+    if (practiceAnswerStatus !== 'correct') {
+      return;
+    }
+    setPracticeInput('');
+    setPracticeAnswerRevealed(false);
+    setPracticeAnswerStatus('idle');
+    setPracticeFeedbackMessage('');
+
+    const isLast = practiceIndex >= practiceTotal - 1;
+    if (isLast) {
+      setMaxGrammarPhaseReached((current) => Math.max(current, 2));
+      setPhase('complete');
+      setFeedback('Lesson complete. Great job!');
+      return;
+    }
+    setPracticeIndex((current) => current + 1);
+    setFeedback('Good. Try the next one.');
   };
 
   const checkQuizAnswer = () => {
     if (mode !== 'words') {
       return;
     }
-    const expected = normalize(quizWord);
     const actual = normalize(quizInput);
     if (!actual) {
       setFeedback('Type your spelling first.');
       return;
     }
 
-    if (actual === expected) {
+    if (checkAnswer(quizInput, [quizWord])) {
       const nextCorrect = quizCorrect + 1;
       setQuizCorrect(nextCorrect);
       setFeedback('Correct spelling! Keep going.');
@@ -366,11 +479,18 @@ export default function LessonScreen() {
   };
 
   const visiblePhases = useMemo(
-    () => lessonSubtabs.filter((tab) => tab.id !== 'quiz' || mode === 'words'),
+    () => lessonSubtabs.filter((tab) => (mode === 'grammar' ? tab.id !== 'quiz' : tab.id !== 'quiz' || mode === 'words')),
     [mode],
   );
 
-  const isSubtabEnabled = (tabId: LessonPhase) => tabId !== 'quiz' || mode === 'words';
+  const isSubtabEnabled = (tabId: LessonPhase) => {
+    if (mode === 'grammar') {
+      const grammarPhaseOrder: LessonPhase[] = ['teach', 'practice', 'complete'];
+      const index = grammarPhaseOrder.indexOf(tabId);
+      return index >= 0 && index <= maxGrammarPhaseReached;
+    }
+    return tabId !== 'quiz' || mode === 'words';
+  };
 
   const teachWord = mode === 'words' ? lessonWords[teachIndex] ?? '' : '';
 
@@ -463,6 +583,7 @@ export default function LessonScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <LinearGradient colors={['#F1FFD1', '#D7F58B', '#B8E86F']} style={styles.gradient}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.topRow}>
           <Pressable onPress={() => router.back()} style={styles.backButton}>
@@ -470,7 +591,7 @@ export default function LessonScreen() {
           </Pressable>
           <View style={styles.topTextWrap}>
             <Text style={styles.topTitle}>{activeLesson.title}</Text>
-            <Text style={styles.topSubtitle}>{'goal' in activeLesson ? activeLesson.goal : activeLesson.rule}</Text>
+            <Text style={styles.topSubtitle}>{'goal' in activeLesson ? activeLesson.goal : activeLesson.subtitle}</Text>
           </View>
         </View>
 
@@ -535,13 +656,16 @@ export default function LessonScreen() {
             )}
             {mode === 'grammar' && (
               <View style={styles.grammarCard}>
-                <Text style={styles.grammarText}>{lessonExamples[teachIndex]}</Text>
+                {currentGrammarTeachStep?.label ? (
+                  <Text style={styles.grammarLabel}>{currentGrammarTeachStep.label}:</Text>
+                ) : null}
+                <Text style={styles.grammarText}>{currentGrammarTeachStep?.content ?? ''}</Text>
               </View>
             )}
 
             <Pressable style={styles.actionButton} onPress={nextTeachStep}>
               <Text style={styles.actionButtonText}>
-                {teachIndex < teachUnits.length - 1 ? 'Next Unit' : 'Start Practice'}
+                {teachIndex < teachUnits.length - 1 ? 'Next' : 'Start Practice'}
               </Text>
             </Pressable>
           </View>
@@ -564,7 +688,7 @@ export default function LessonScreen() {
             )}
             {mode === 'grammar' && (
               <View style={styles.grammarCard}>
-                <Text style={styles.goalText}>{lessonExercises[practiceIndex]?.prompt ?? ''}</Text>
+                <Text style={styles.goalText}>{currentGrammarExercise?.prompt ?? ''}</Text>
               </View>
             )}
 
@@ -576,19 +700,48 @@ export default function LessonScreen() {
               style={styles.answerInput}
               placeholderTextColor="#6EA487"
             />
+            {mode === 'grammar' && currentGrammarExercise?.hint ? (
+              <Text style={styles.hintText}>Hint: {currentGrammarExercise.hint}</Text>
+            ) : null}
             {practiceAnswerRevealed && (
               <Text style={styles.revealedAnswerText}>
-                Revealed: {practiceUnits[practiceIndex] ?? ''}
+                Revealed: {mode === 'grammar' ? currentGrammarExercise?.acceptedAnswers[0] ?? '' : practiceUnits[practiceIndex] ?? ''}
               </Text>
             )}
-            <View style={styles.buttonRow}>
-              <Pressable style={styles.secondaryButtonFlex} onPress={revealPracticeAnswer}>
-                <Text style={styles.secondaryButtonText}>Reveal answer</Text>
-              </Pressable>
-              <Pressable style={styles.actionButtonFlex} onPress={checkPracticeAnswer}>
-                <Text style={styles.actionButtonText}>Check answer</Text>
-              </Pressable>
-            </View>
+            {mode === 'grammar' && practiceAnswerStatus !== 'idle' ? (
+              <Text
+                style={[
+                  styles.answerFeedbackText,
+                  practiceAnswerStatus === 'correct' ? styles.answerFeedbackSuccess : styles.answerFeedbackError,
+                ]}>
+                {practiceFeedbackMessage}
+              </Text>
+            ) : null}
+            {mode === 'grammar' ? (
+              <>
+                <Pressable style={styles.secondaryButton} onPress={revealPracticeAnswer}>
+                  <Text style={styles.secondaryButtonText}>Reveal answer</Text>
+                </Pressable>
+                {practiceAnswerStatus === 'correct' ? (
+                  <Pressable style={styles.actionButton} onPress={nextPracticeStep}>
+                    <Text style={styles.actionButtonText}>Next</Text>
+                  </Pressable>
+                ) : (
+                  <Pressable style={styles.actionButton} onPress={checkPracticeAnswer}>
+                    <Text style={styles.actionButtonText}>Check answer</Text>
+                  </Pressable>
+                )}
+              </>
+            ) : (
+              <View style={styles.buttonRow}>
+                <Pressable style={styles.secondaryButtonFlex} onPress={revealPracticeAnswer}>
+                  <Text style={styles.secondaryButtonText}>Reveal answer</Text>
+                </Pressable>
+                <Pressable style={styles.actionButtonFlex} onPress={checkPracticeAnswer}>
+                  <Text style={styles.actionButtonText}>Check answer</Text>
+                </Pressable>
+              </View>
+            )}
           </View>
         )}
 
@@ -622,12 +775,27 @@ export default function LessonScreen() {
             <Text style={styles.panelTitle}>Lesson Complete</Text>
             <Text style={styles.goalText}>Practice score: {practiceCorrect}/{practiceTotal}</Text>
             {mode === 'words' && <Text style={styles.goalText}>Quiz score: {quizCorrect}/{quizTotal}</Text>}
-            <Pressable style={styles.actionButton} onPress={restartLesson}>
-              <Text style={styles.actionButtonText}>Restart Lesson</Text>
-            </Pressable>
+            {mode === 'grammar' ? (
+              <>
+                <Pressable style={styles.secondaryButton} onPress={restartTeachMode}>
+                  <Text style={styles.secondaryButtonText}>Back to teach</Text>
+                </Pressable>
+                <Pressable style={styles.actionButton} onPress={restartLesson}>
+                  <Text style={styles.actionButtonText}>Restart lesson</Text>
+                </Pressable>
+                <Pressable style={styles.secondaryButton} onPress={() => router.back()}>
+                  <Text style={styles.secondaryButtonText}>Back to lessons</Text>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable style={styles.actionButton} onPress={restartLesson}>
+                <Text style={styles.actionButtonText}>Restart Lesson</Text>
+              </Pressable>
+            )}
           </View>
         )}
       </ScrollView>
+      </LinearGradient>
     </SafeAreaView>
   );
 }
@@ -636,6 +804,9 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: '#D7F58B',
+  },
+  gradient: {
+    flex: 1,
   },
   container: {
     padding: 16,
@@ -694,7 +865,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#0EC46D',
+    backgroundColor: '#0A6D3E',
   },
   progressText: {
     marginTop: 8,
@@ -936,5 +1107,35 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 21,
     fontWeight: '500',
+  },
+  grammarLabel: {
+    color: '#0A6D3E',
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  hintText: {
+    color: '#4B835F',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  answerFeedbackText: {
+    fontSize: 14,
+    fontWeight: '700',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  answerFeedbackSuccess: {
+    color: '#075E35',
+    backgroundColor: '#DFF5E4',
+    borderWidth: 1,
+    borderColor: '#8AD59E',
+  },
+  answerFeedbackError: {
+    color: '#9B1C1C',
+    backgroundColor: '#FDE8E8',
+    borderWidth: 1,
+    borderColor: '#F5B5B5',
   },
 });

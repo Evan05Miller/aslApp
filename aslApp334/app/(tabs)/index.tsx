@@ -12,8 +12,8 @@ export default function LearnScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.headerCard}>
-          <Text style={styles.headerTitle}>Learn Fingerspelling</Text>
-          <Text style={styles.headerSubtitle}>Pick a mode and open any lesson to start.</Text>
+          <Text style={styles.headerTitle}>Your ASL journey starts here.</Text>
+          <Text style={styles.headerSubtitle}>Choose a mode below to begin</Text>
         </View>
 
         <View style={styles.modeRow}>

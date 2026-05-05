@@ -10,6 +10,7 @@ export type UserPreferences = {
   /** Playback rate for letter videos (0.5 = half speed, 2 = double). */
   videoSpeed: number;
   handedness: Handedness;
+  highContrast: boolean;
   /**
    * Practice tab follow-along only: after each letter’s clip finishes (video) or a short hold (static image),
    * advance to the next letter without tapping the arrows.
@@ -32,7 +33,8 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   letterDisplay: 'video',
   videoSpeed: 1,
   handedness: 'lefty',
-  practiceAutoAdvanceLetters: false,
+  highContrast: false,
+  practiceAutoAdvanceLetters: true,
 };
 
 export const VIDEO_SPEED_MIN = 0.5;
@@ -57,6 +59,9 @@ function normalize(raw: unknown): UserPreferences {
   }
   if (o.handedness === 'lefty' || o.handedness === 'righty') {
     base.handedness = o.handedness;
+  }
+  if (typeof o.highContrast === 'boolean') {
+    base.highContrast = o.highContrast;
   }
   if (typeof o.practiceAutoAdvanceLetters === 'boolean') {
     base.practiceAutoAdvanceLetters = o.practiceAutoAdvanceLetters;

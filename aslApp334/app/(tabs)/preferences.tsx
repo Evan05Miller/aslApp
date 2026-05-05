@@ -10,24 +10,46 @@ type ToggleRailProps = {
   leftLabel: string;
   rightLabel: string;
   accessibilityLabel: string;
+  highContrast: boolean;
 };
 
-function ToggleRail({ value, onValueChange, leftLabel, rightLabel, accessibilityLabel }: ToggleRailProps) {
+function ToggleRail({
+  value,
+  onValueChange,
+  leftLabel,
+  rightLabel,
+  accessibilityLabel,
+  highContrast,
+}: ToggleRailProps) {
   return (
-    <View style={styles.toggleRail}>
-      <Text style={[styles.toggleSide, !value && styles.toggleSideOn]} numberOfLines={1}>
+    <View style={[styles.toggleRail, highContrast && styles.toggleRailHighContrast]}>
+      <Text
+        style={[
+          styles.toggleSide,
+          highContrast && styles.toggleSideHighContrast,
+          !value && styles.toggleSideOn,
+          highContrast && !value && styles.toggleSideOnHighContrast,
+        ]}
+        numberOfLines={1}>
         {leftLabel}
       </Text>
       <Switch
         style={styles.toggleSwitch}
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: '#A8DFB1', true: '#08BF6A' }}
+        trackColor={{ false: highContrast ? '#4A4A4A' : '#A8DFB1', true: highContrast ? '#FFD400' : '#08BF6A' }}
         thumbColor="#FFFFFF"
-        ios_backgroundColor="#A8DFB1"
+        ios_backgroundColor={highContrast ? '#4A4A4A' : '#A8DFB1'}
         accessibilityLabel={accessibilityLabel}
       />
-      <Text style={[styles.toggleSide, value && styles.toggleSideOn]} numberOfLines={1}>
+      <Text
+        style={[
+          styles.toggleSide,
+          highContrast && styles.toggleSideHighContrast,
+          value && styles.toggleSideOn,
+          highContrast && value && styles.toggleSideOnHighContrast,
+        ]}
+        numberOfLines={1}>
         {rightLabel}
       </Text>
     </View>
@@ -40,53 +62,74 @@ export default function PreferencesScreen() {
     setLetterDisplay,
     setVideoSpeed,
     setHandedness,
+    setHighContrast,
     setPracticeAutoAdvanceLetters,
   } = usePreferences();
+  const highContrast = preferences.highContrast;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, highContrast && styles.safeHighContrast]}>
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.headerCard}>
-          <Text style={styles.headerTitle}>Preferences</Text>
-          <Text style={styles.headerSubtitle}>Customize how letters look and how videos play.</Text>
+        <View style={[styles.headerCard, highContrast && styles.headerCardHighContrast]}>
+          <Text style={[styles.headerTitle, highContrast && styles.headerTitleHighContrast]}>Preferences</Text>
+          <Text style={[styles.headerSubtitle, highContrast && styles.headerSubtitleHighContrast]}>
+            Customize how letters look and how videos play.
+          </Text>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.label}>Dominant hand</Text>
+        <View style={[styles.card, highContrast && styles.cardHighContrast]}>
+          <Text style={[styles.label, highContrast && styles.labelHighContrast]}>Dominant hand</Text>
           <ToggleRail
             value={preferences.handedness === 'righty'}
             onValueChange={(v) => setHandedness(v ? 'righty' : 'lefty')}
             leftLabel="Lefty"
             rightLabel="Righty"
             accessibilityLabel="Toggle dominant hand: lefty or righty mirror"
+            highContrast={highContrast}
           />
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.label}>Letter display</Text>
+        <View style={[styles.card, highContrast && styles.cardHighContrast]}>
+          <Text style={[styles.label, highContrast && styles.labelHighContrast]}>Letter display</Text>
           <ToggleRail
             value={preferences.letterDisplay === 'video'}
             onValueChange={(v) => setLetterDisplay(v ? 'video' : 'image')}
             leftLabel="Static"
             rightLabel="Video"
             accessibilityLabel="Toggle between static images and video for letters"
+            highContrast={highContrast}
           />
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.label}>Practice: auto-advance letters</Text>
+        <View style={[styles.card, highContrast && styles.cardHighContrast]}>
+          <Text style={[styles.label, highContrast && styles.labelHighContrast]}>Practice: auto-advance letters</Text>
           <ToggleRail
             value={preferences.practiceAutoAdvanceLetters}
             onValueChange={setPracticeAutoAdvanceLetters}
             leftLabel="Manual"
             rightLabel="Auto"
             accessibilityLabel="Auto-advance letters in Practice follow-along"
+            highContrast={highContrast}
           />
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.label}>Video speed</Text>
-          <Text style={styles.speedValue}>{preferences.videoSpeed.toFixed(2)}×</Text>
+        <View style={[styles.card, highContrast && styles.cardHighContrast]}>
+          <Text style={[styles.label, highContrast && styles.labelHighContrast]}>High contrast mode</Text>
+          <ToggleRail
+            value={preferences.highContrast}
+            onValueChange={setHighContrast}
+            leftLabel="Off"
+            rightLabel="On"
+            accessibilityLabel="Toggle high contrast mode"
+            highContrast={highContrast}
+          />
+        </View>
+
+        <View style={[styles.card, highContrast && styles.cardHighContrast]}>
+          <Text style={[styles.label, highContrast && styles.labelHighContrast]}>Video speed</Text>
+          <Text style={[styles.speedValue, highContrast && styles.speedValueHighContrast]}>
+            {preferences.videoSpeed.toFixed(2)}x
+          </Text>
           <Slider
             style={styles.slider}
             minimumValue={VIDEO_SPEED_MIN}
@@ -94,24 +137,28 @@ export default function PreferencesScreen() {
             step={VIDEO_SPEED_STEP}
             value={preferences.videoSpeed}
             onValueChange={setVideoSpeed}
-            minimumTrackTintColor="#08BF6A"
-            maximumTrackTintColor="#C7EFC0"
-            thumbTintColor="#0A7D47"
+            minimumTrackTintColor={highContrast ? '#FFD400' : '#08BF6A'}
+            maximumTrackTintColor={highContrast ? '#4A4A4A' : '#C7EFC0'}
+            thumbTintColor={highContrast ? '#FFFFFF' : '#0A7D47'}
           />
           <View style={styles.sliderEnds}>
             <Text
               style={[
                 styles.sliderEndLabel,
+                highContrast && styles.sliderEndLabelHighContrast,
                 preferences.videoSpeed < 1 && styles.sliderEndLabelActive,
+                highContrast && preferences.videoSpeed < 1 && styles.sliderEndLabelActiveHighContrast,
               ]}>
-              {`Slower ←\n${VIDEO_SPEED_MIN}×`}
+              {`Slower <-\n${VIDEO_SPEED_MIN}x`}
             </Text>
             <Text
               style={[
                 styles.sliderEndLabel,
+                highContrast && styles.sliderEndLabelHighContrast,
                 preferences.videoSpeed > 1 && styles.sliderEndLabelActive,
+                highContrast && preferences.videoSpeed > 1 && styles.sliderEndLabelActiveHighContrast,
               ]}>
-              {`→ Faster\n${VIDEO_SPEED_MAX}×`}
+              {`Faster ->\n${VIDEO_SPEED_MAX}x`}
             </Text>
           </View>
         </View>
@@ -124,6 +171,9 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: '#D7F58B',
+  },
+  safeHighContrast: {
+    backgroundColor: '#000000',
   },
   container: {
     padding: 16,
@@ -138,12 +188,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     alignItems: 'center',
   },
+  headerCardHighContrast: {
+    backgroundColor: '#000000',
+    borderColor: '#FFD400',
+    borderWidth: 3,
+  },
   headerTitle: {
     color: '#FFFFFF',
     fontSize: 24,
     fontWeight: '700',
     textAlign: 'center',
     alignSelf: 'stretch',
+  },
+  headerTitleHighContrast: {
+    color: '#FFD400',
   },
   headerSubtitle: {
     color: '#EAFEF1',
@@ -152,6 +210,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: 'center',
     alignSelf: 'stretch',
+  },
+  headerSubtitleHighContrast: {
+    color: '#FFFFFF',
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -162,6 +223,11 @@ const styles = StyleSheet.create({
     gap: 8,
     alignItems: 'center',
   },
+  cardHighContrast: {
+    backgroundColor: '#000000',
+    borderColor: '#FFD400',
+    borderWidth: 3,
+  },
   label: {
     fontSize: 16,
     fontWeight: '700',
@@ -169,13 +235,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     alignSelf: 'stretch',
   },
-  hint: {
-    marginTop: 4,
-    fontSize: 13,
-    color: '#4D8D67',
-    lineHeight: 18,
-    textAlign: 'center',
-    alignSelf: 'stretch',
+  labelHighContrast: {
+    color: '#FFFFFF',
   },
   toggleRail: {
     flexDirection: 'row',
@@ -192,6 +253,11 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     width: '100%',
   },
+  toggleRailHighContrast: {
+    backgroundColor: '#111111',
+    borderColor: '#FFFFFF',
+    borderWidth: 2,
+  },
   toggleSide: {
     flex: 1,
     fontSize: 13,
@@ -199,9 +265,15 @@ const styles = StyleSheet.create({
     color: '#6B9080',
     textAlign: 'center',
   },
+  toggleSideHighContrast: {
+    color: '#FFFFFF',
+  },
   toggleSideOn: {
     color: '#056136',
     fontWeight: '800',
+  },
+  toggleSideOnHighContrast: {
+    color: '#FFD400',
   },
   toggleSwitch: {
     flexShrink: 0,
@@ -213,6 +285,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 4,
     alignSelf: 'stretch',
+  },
+  speedValueHighContrast: {
+    color: '#FFD400',
   },
   slider: {
     width: '100%',
@@ -237,8 +312,14 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     textAlign: 'center',
   },
+  sliderEndLabelHighContrast: {
+    color: '#FFFFFF',
+  },
   sliderEndLabelActive: {
     color: '#056136',
     fontWeight: '800',
+  },
+  sliderEndLabelActiveHighContrast: {
+    color: '#FFD400',
   },
 });

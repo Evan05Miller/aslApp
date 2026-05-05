@@ -15,6 +15,7 @@ import {
 
 import { isBuiltInWordSetId } from '@/constants/builtin-word-sets';
 import { CUSTOM_WORD_LESSON_ID, setCustomWordSet } from '@/constants/custom-word-set';
+import { usePreferences } from '@/contexts/preferences-context';
 import { parseWordsFromInput } from '@/lib/parse-words-input';
 import { deleteWordSet, loadAllSavedSets, saveNewWordSet, type SavedWordSet } from '@/lib/saved-word-sets';
 
@@ -32,6 +33,8 @@ function pushLesson(savedSetId?: string) {
 }
 
 export default function MySetsScreen() {
+  const { preferences } = usePreferences();
+  const highContrast = preferences.highContrast;
   const [titleInput, setTitleInput] = useState('');
   const [wordsInput, setWordsInput] = useState('');
   const [savedSets, setSavedSets] = useState<SavedWordSet[]>([]);
@@ -112,58 +115,58 @@ export default function MySetsScreen() {
   }, [deleteTarget, refreshList]);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, highContrast && styles.safeHighContrast]}>
       <ScrollView
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
         nestedScrollEnabled>
-        <View style={styles.headerCard}>
-          <Text style={styles.headerTitle}>Custom Learning Sets</Text>
-          <Text style={styles.headerSubtitle}>
+        <View style={[styles.headerCard, highContrast && styles.headerCardHighContrast]}>
+          <Text style={[styles.headerTitle, highContrast && styles.titleHighContrast]}>Custom Learning Sets</Text>
+          <Text style={[styles.headerSubtitle, highContrast && styles.textHighContrast]}>
             Build a word list to practice right away or save a set to restudy later.
           </Text>
         </View>
 
-        <Text style={styles.sectionLabel}>Create a set</Text>
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Set name</Text>
+        <Text style={[styles.sectionLabel, highContrast && styles.titleHighContrast]}>Create a set</Text>
+        <View style={[styles.card, highContrast && styles.cardHighContrast]}>
+          <Text style={[styles.fieldLabel, highContrast && styles.textHighContrast]}>Set name</Text>
           <TextInput
             value={titleInput}
             onChangeText={setTitleInput}
             placeholder="e.g. Week 3 vocabulary"
-            placeholderTextColor="#6EA487"
-            style={styles.singleLineInput}
+            placeholderTextColor={highContrast ? '#BDBDBD' : '#6EA487'}
+            style={[styles.singleLineInput, highContrast && styles.inputHighContrast]}
             autoCapitalize="sentences"
           />
-          <Text style={styles.fieldLabel}>Words</Text>
+          <Text style={[styles.fieldLabel, highContrast && styles.textHighContrast]}>Words</Text>
           <Text style={styles.fieldHint}>Commas or new lines. Only A–Z letters are kept.</Text>
           <TextInput
             value={wordsInput}
             onChangeText={setWordsInput}
             placeholder={'e.g. CAT, HELLO, ASL\nor one word per line'}
-            placeholderTextColor="#6EA487"
+            placeholderTextColor={highContrast ? '#BDBDBD' : '#6EA487'}
             multiline
-            style={styles.wordsInput}
+            style={[styles.wordsInput, highContrast && styles.inputHighContrast]}
             autoCapitalize="characters"
           />
           <View style={styles.createActions}>
-            <Pressable style={styles.secondaryButton} onPress={startWithoutSaving} disabled={saving}>
-              <Text style={styles.secondaryButtonText}>Start without saving</Text>
+            <Pressable style={[styles.secondaryButton, highContrast && styles.secondaryButtonHighContrast]} onPress={startWithoutSaving} disabled={saving}>
+              <Text style={[styles.secondaryButtonText, highContrast && styles.secondaryButtonTextHighContrast]}>Start without saving</Text>
             </Pressable>
-            <Pressable style={styles.primaryButton} onPress={() => void saveAndStart()} disabled={saving}>
+            <Pressable style={[styles.primaryButton, highContrast && styles.primaryButtonHighContrast]} onPress={() => void saveAndStart()} disabled={saving}>
               {saving ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color={highContrast ? '#000000' : '#FFFFFF'} />
               ) : (
-                <Text style={styles.primaryButtonText}>Save and practice</Text>
+                <Text style={[styles.primaryButtonText, highContrast && styles.primaryButtonTextHighContrast]}>Save and practice</Text>
               )}
             </Pressable>
           </View>
         </View>
 
-        <Text style={styles.sectionLabel}>Saved sets</Text>
+        <Text style={[styles.sectionLabel, highContrast && styles.titleHighContrast]}>Saved sets</Text>
         {listLoading ? (
           <View style={styles.loadingRow}>
-            <ActivityIndicator color="#0A7D47" />
+            <ActivityIndicator color={highContrast ? '#FFD400' : '#0A7D47'} />
             <Text style={styles.loadingText}>Loading…</Text>
           </View>
         ) : (
@@ -171,17 +174,17 @@ export default function MySetsScreen() {
             {savedSets.map((set) => {
               const builtIn = isBuiltInWordSetId(set.id);
               return (
-                <View key={set.id} style={styles.savedRow}>
+                <View key={set.id} style={[styles.savedRow, highContrast && styles.cardHighContrast]}>
                   <View style={styles.savedTextCol}>
-                    <Text style={styles.savedTitle}>{set.title}</Text>
-                    <Text style={styles.savedMeta}>
+                    <Text style={[styles.savedTitle, highContrast && styles.titleHighContrast]}>{set.title}</Text>
+                    <Text style={[styles.savedMeta, highContrast && styles.textHighContrast]}>
                       {builtIn ? 'Built-in · ' : ''}
                       {set.words.length} word{set.words.length === 1 ? '' : 's'}
                     </Text>
                   </View>
                   <View style={styles.savedActions}>
-                    <Pressable style={styles.studyBtn} onPress={() => studySaved(set.id)}>
-                      <Text style={styles.studyBtnText}>Study</Text>
+                    <Pressable style={[styles.studyBtn, highContrast && styles.primaryButtonHighContrast]} onPress={() => studySaved(set.id)}>
+                      <Text style={[styles.studyBtnText, highContrast && styles.primaryButtonTextHighContrast]}>Study</Text>
                     </Pressable>
                     <Pressable style={styles.deleteBtn} onPress={() => setDeleteTarget(set)}>
                       <Text style={styles.deleteBtnText}>Delete</Text>
@@ -200,19 +203,19 @@ export default function MySetsScreen() {
         animationType="fade"
         onRequestClose={() => !deleteBusy && setDeleteTarget(null)}>
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Delete set</Text>
-            <Text style={styles.modalBody}>
+          <View style={[styles.modalCard, highContrast && styles.cardHighContrast]}>
+            <Text style={[styles.modalTitle, highContrast && styles.titleHighContrast]}>Delete set</Text>
+            <Text style={[styles.modalBody, highContrast && styles.textHighContrast]}>
               {deleteTarget && isBuiltInWordSetId(deleteTarget.id)
                 ? `Remove the default “${deleteTarget.title}” list from Practice and My sets? You can add your own set with the same words later.`
                 : `Remove “${deleteTarget?.title ?? ''}”? This cannot be undone.`}
             </Text>
             <View style={styles.modalActions}>
               <Pressable
-                style={styles.modalCancel}
+                style={[styles.modalCancel, highContrast && styles.secondaryButtonHighContrast]}
                 disabled={deleteBusy}
                 onPress={() => setDeleteTarget(null)}>
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={[styles.modalCancelText, highContrast && styles.secondaryButtonTextHighContrast]}>Cancel</Text>
               </Pressable>
               <Pressable
                 style={styles.modalDelete}
@@ -237,6 +240,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#D7F58B',
   },
+  safeHighContrast: {
+    backgroundColor: '#000000',
+  },
   container: {
     padding: 16,
     paddingBottom: 36,
@@ -247,6 +253,17 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 14,
+  },
+  headerCardHighContrast: {
+    backgroundColor: '#000000',
+    borderColor: '#FFD400',
+    borderWidth: 3,
+  },
+  titleHighContrast: {
+    color: '#FFD400',
+  },
+  textHighContrast: {
+    color: '#FFFFFF',
   },
   headerTitle: {
     color: '#FFFFFF',
@@ -274,6 +291,17 @@ const styles = StyleSheet.create({
     borderColor: '#B6EFAE',
     padding: 14,
     gap: 8,
+  },
+  cardHighContrast: {
+    backgroundColor: '#000000',
+    borderColor: '#FFFFFF',
+    borderWidth: 3,
+  },
+  inputHighContrast: {
+    backgroundColor: '#000000',
+    borderColor: '#FFFFFF',
+    borderWidth: 2,
+    color: '#FFFFFF',
   },
   fieldLabel: {
     fontSize: 14,
@@ -322,10 +350,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
   },
+  secondaryButtonHighContrast: {
+    backgroundColor: '#000000',
+    borderColor: '#FFD400',
+    borderWidth: 3,
+  },
   secondaryButtonText: {
     color: '#0A7D47',
     fontWeight: '700',
     fontSize: 13,
+  },
+  secondaryButtonTextHighContrast: {
+    color: '#FFD400',
   },
   primaryButton: {
     flex: 1,
@@ -336,10 +372,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#0EC46D',
     minHeight: 46,
   },
+  primaryButtonHighContrast: {
+    backgroundColor: '#FFD400',
+  },
   primaryButtonText: {
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 13,
+  },
+  primaryButtonTextHighContrast: {
+    color: '#000000',
   },
   loadingRow: {
     flexDirection: 'row',

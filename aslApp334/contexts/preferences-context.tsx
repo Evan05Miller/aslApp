@@ -16,6 +16,7 @@ type PreferencesContextValue = {
   setLetterDisplay: (mode: LetterDisplayMode) => void;
   setVideoSpeed: (speed: number) => void;
   setHandedness: (h: Handedness) => void;
+  setHighContrast: (on: boolean) => void;
   setPracticeAutoAdvanceLetters: (on: boolean) => void;
 };
 
@@ -87,6 +88,17 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     [persist],
   );
 
+  const setHighContrast = useCallback(
+    (highContrast: boolean) => {
+      setPreferences((p) => {
+        const next = { ...p, highContrast };
+        persist(next);
+        return next;
+      });
+    },
+    [persist],
+  );
+
   const value = useMemo(
     () => ({
       preferences,
@@ -94,6 +106,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       setLetterDisplay,
       setVideoSpeed,
       setHandedness,
+      setHighContrast,
       setPracticeAutoAdvanceLetters,
     }),
     [
@@ -102,6 +115,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       setLetterDisplay,
       setVideoSpeed,
       setHandedness,
+      setHighContrast,
       setPracticeAutoAdvanceLetters,
     ],
   );

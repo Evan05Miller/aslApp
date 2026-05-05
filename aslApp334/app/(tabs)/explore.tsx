@@ -14,11 +14,14 @@ import {
 } from 'react-native';
 
 import { FollowAlongSignsPanel } from '@/components/follow-along-signs';
+import { usePreferences } from '@/contexts/preferences-context';
 import { loadAllSavedSets, type SavedWordSet } from '@/lib/saved-word-sets';
 
 type UpperPage = 'sets' | 'words';
 
 export default function CameraPracticeScreen() {
+  const { preferences } = usePreferences();
+  const highContrast = preferences.highContrast;
   const [permission, requestPermission] = useCameraPermissions();
   const [savedSets, setSavedSets] = useState<SavedWordSet[]>([]);
   const [listLoading, setListLoading] = useState(true);
@@ -76,9 +79,9 @@ export default function CameraPracticeScreen() {
   const lessonUiCompact = wordLessonOpen && upperPage === 'words';
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, highContrast && styles.safeHighContrast]}>
       <View style={styles.split}>
-        <View style={[styles.topHalf, lessonUiCompact && styles.topHalfLessonTight]}>
+        <View style={[styles.topHalf, highContrast && styles.topHalfHighContrast, lessonUiCompact && styles.topHalfLessonTight]}>
           {listLoading ? (
             <>
               <Text style={styles.screenTitle}>Camera practice</Text>
@@ -234,6 +237,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#D7F58B',
   },
+  safeHighContrast: {
+    backgroundColor: '#000000',
+  },
   split: {
     flex: 1,
     overflow: 'hidden',
@@ -250,6 +256,10 @@ const styles = StyleSheet.create({
     borderBottomColor: '#A9E9A5',
     backgroundColor: '#D7F58B',
     overflow: 'hidden',
+  },
+  topHalfHighContrast: {
+    backgroundColor: '#000000',
+    borderBottomColor: '#FFD400',
   },
   /** Slightly tighter padding during lesson so the sign can use the fixed top strip only (camera split unchanged). */
   topHalfLessonTight: {

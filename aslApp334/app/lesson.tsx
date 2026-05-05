@@ -16,6 +16,7 @@ import {
 import { AslLetterSign } from '@/components/asl-letter-sign';
 import { GrammarExercise, LearnMode, WordLesson, getLessonsForMode, lessonSubtabs } from '@/constants/asl-lessons';
 import { CUSTOM_WORD_LESSON_ID, getCustomWordSet } from '@/constants/custom-word-set';
+import { usePreferences } from '@/contexts/preferences-context';
 import { getWordSetById } from '@/lib/saved-word-sets';
 
 type LessonPhase = 'teach' | 'practice' | 'quiz' | 'complete';
@@ -55,6 +56,8 @@ export default function LessonScreen() {
     params.mode === 'letters' || params.mode === 'words' || params.mode === 'grammar'
       ? params.mode
       : 'letters';
+  const { preferences } = usePreferences();
+  const highContrast = preferences.highContrast;
 
   const rawLessonId = params.lessonId;
   const lessonIdParam = Array.isArray(rawLessonId) ? rawLessonId[0] : rawLessonId;
@@ -582,25 +585,25 @@ export default function LessonScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <LinearGradient colors={['#F1FFD1', '#D7F58B', '#B8E86F']} style={styles.gradient}>
+    <SafeAreaView style={[styles.safe, highContrast && styles.safeHighContrast]}>
+      <LinearGradient colors={highContrast ? ['#000000', '#000000'] : ['#F1FFD1', '#D7F58B', '#B8E86F']} style={styles.gradient}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.topRow}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Pressable onPress={() => router.back()} style={[styles.backButton, highContrast && styles.primaryHighContrast]}>
             <Text style={styles.backArrow}>←</Text>
           </Pressable>
-          <View style={styles.topTextWrap}>
-            <Text style={styles.topTitle}>{activeLesson.title}</Text>
-            <Text style={styles.topSubtitle}>{'goal' in activeLesson ? activeLesson.goal : activeLesson.subtitle}</Text>
+          <View style={[styles.topTextWrap, highContrast && styles.cardHighContrast]}>
+            <Text style={[styles.topTitle, highContrast && styles.titleHighContrast]}>{activeLesson.title}</Text>
+            <Text style={[styles.topSubtitle, highContrast && styles.textHighContrast]}>{'goal' in activeLesson ? activeLesson.goal : activeLesson.subtitle}</Text>
           </View>
         </View>
 
-        <View style={styles.progressCard}>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]} />
+        <View style={[styles.progressCard, highContrast && styles.cardHighContrast]}>
+          <View style={[styles.progressTrack, highContrast && styles.progressTrackHighContrast]}>
+            <View style={[styles.progressFill, highContrast && styles.progressFillHighContrast, { width: `${Math.round(progress * 100)}%` }]} />
           </View>
-          <Text style={styles.progressText}>{Math.round(progress * 100)}% complete</Text>
-          <Text style={styles.feedbackText}>{feedback}</Text>
+          <Text style={[styles.progressText, highContrast && styles.titleHighContrast]}>{Math.round(progress * 100)}% complete</Text>
+          <Text style={[styles.feedbackText, highContrast && styles.textHighContrast]}>{feedback}</Text>
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.subtabRow}>
@@ -619,13 +622,17 @@ export default function LessonScreen() {
                 }}
                 style={[
                   styles.subtabButton,
+                  highContrast && styles.secondaryHighContrast,
                   active && styles.subtabButtonActive,
+                  highContrast && active && styles.primaryHighContrast,
                   !enabled && styles.subtabButtonDisabled,
                 ]}>
                 <Text
                   style={[
                     styles.subtabButtonText,
+                    highContrast && styles.secondaryTextHighContrast,
                     active && styles.subtabButtonTextActive,
+                    highContrast && active && styles.primaryTextHighContrast,
                     !enabled && styles.subtabButtonTextDisabled,
                   ]}>
                   {tab.label}
@@ -635,36 +642,36 @@ export default function LessonScreen() {
           })}
         </ScrollView>
 
-        <Pressable style={styles.secondaryButton} onPress={restartTeachMode}>
-          <Text style={styles.secondaryButtonText}>Restart teach (from first step)</Text>
+        <Pressable style={[styles.secondaryButton, highContrast && styles.secondaryHighContrast]} onPress={restartTeachMode}>
+          <Text style={[styles.secondaryButtonText, highContrast && styles.secondaryTextHighContrast]}>Restart teach (from first step)</Text>
         </Pressable>
 
         {phase === 'teach' && (
-          <View style={styles.panel}>
-            <Text style={styles.panelTitle}>Teach</Text>
+          <View style={[styles.panel, highContrast && styles.cardHighContrast]}>
+            <Text style={[styles.panelTitle, highContrast && styles.titleHighContrast]}>Teach</Text>
             {mode === 'letters' && (
-              <View style={styles.teachSignCard}>
+              <View style={[styles.teachSignCard, highContrast && styles.cardHighContrast]}>
                 <AslLetterSign letter={teachLetter} variant="teach" style={styles.teachSignImage} />
-                <Text style={styles.teachSignLabel}>Letter {teachLetter}</Text>
+                <Text style={[styles.teachSignLabel, highContrast && styles.titleHighContrast]}>Letter {teachLetter}</Text>
               </View>
             )}
             {mode === 'words' && (
-              <View style={styles.wordCard}>
-                <Text style={styles.wordText}>Word: {teachWord}</Text>
+              <View style={[styles.wordCard, highContrast && styles.cardHighContrast]}>
+                <Text style={[styles.wordText, highContrast && styles.titleHighContrast]}>Word: {teachWord}</Text>
                 {renderWordLetterCarousel(teachWord, 'teach')}
               </View>
             )}
             {mode === 'grammar' && (
-              <View style={styles.grammarCard}>
+              <View style={[styles.grammarCard, highContrast && styles.cardHighContrast]}>
                 {currentGrammarTeachStep?.label ? (
-                  <Text style={styles.grammarLabel}>{currentGrammarTeachStep.label}:</Text>
+                  <Text style={[styles.grammarLabel, highContrast && styles.titleHighContrast]}>{currentGrammarTeachStep.label}:</Text>
                 ) : null}
-                <Text style={styles.grammarText}>{currentGrammarTeachStep?.content ?? ''}</Text>
+                <Text style={[styles.grammarText, highContrast && styles.textHighContrast]}>{currentGrammarTeachStep?.content ?? ''}</Text>
               </View>
             )}
 
-            <Pressable style={styles.actionButton} onPress={nextTeachStep}>
-              <Text style={styles.actionButtonText}>
+            <Pressable style={[styles.actionButton, highContrast && styles.primaryHighContrast]} onPress={nextTeachStep}>
+              <Text style={[styles.actionButtonText, highContrast && styles.primaryTextHighContrast]}>
                 {teachIndex < teachUnits.length - 1 ? 'Next' : 'Start Practice'}
               </Text>
             </Pressable>
@@ -672,23 +679,23 @@ export default function LessonScreen() {
         )}
 
         {phase === 'practice' && (
-          <View style={styles.panel}>
-            <Text style={styles.panelTitle}>Practice</Text>
+          <View style={[styles.panel, highContrast && styles.cardHighContrast]}>
+            <Text style={[styles.panelTitle, highContrast && styles.titleHighContrast]}>Practice</Text>
             {mode === 'letters' && (
-              <View style={styles.teachSignCard}>
+              <View style={[styles.teachSignCard, highContrast && styles.cardHighContrast]}>
                 <AslLetterSign letter={practiceLetter} variant="practice" style={styles.teachSignImage} />
-                <Text style={styles.goalText}>Type the letter shown by the sign.</Text>
+                <Text style={[styles.goalText, highContrast && styles.textHighContrast]}>Type the letter shown by the sign.</Text>
               </View>
             )}
             {mode === 'words' && (
-              <View style={styles.wordCard}>
-                <Text style={styles.goalText}>Spell this word from signs (one letter at a time):</Text>
+              <View style={[styles.wordCard, highContrast && styles.cardHighContrast]}>
+                <Text style={[styles.goalText, highContrast && styles.textHighContrast]}>Spell this word from signs (one letter at a time):</Text>
                 {renderWordLetterCarousel(practiceWord, 'practice')}
               </View>
             )}
             {mode === 'grammar' && (
-              <View style={styles.grammarCard}>
-                <Text style={styles.goalText}>{currentGrammarExercise?.prompt ?? ''}</Text>
+              <View style={[styles.grammarCard, highContrast && styles.cardHighContrast]}>
+                <Text style={[styles.goalText, highContrast && styles.textHighContrast]}>{currentGrammarExercise?.prompt ?? ''}</Text>
               </View>
             )}
 
@@ -697,14 +704,14 @@ export default function LessonScreen() {
               onChangeText={setPracticeInput}
               placeholder="Type your answer"
               autoCapitalize="characters"
-              style={styles.answerInput}
-              placeholderTextColor="#6EA487"
+              style={[styles.answerInput, highContrast && styles.inputHighContrast]}
+              placeholderTextColor={highContrast ? '#BDBDBD' : '#6EA487'}
             />
             {mode === 'grammar' && currentGrammarExercise?.hint ? (
-              <Text style={styles.hintText}>Hint: {currentGrammarExercise.hint}</Text>
+              <Text style={[styles.hintText, highContrast && styles.textHighContrast]}>Hint: {currentGrammarExercise.hint}</Text>
             ) : null}
             {practiceAnswerRevealed && (
-              <Text style={styles.revealedAnswerText}>
+              <Text style={[styles.revealedAnswerText, highContrast && styles.cardHighContrast, highContrast && styles.titleHighContrast]}>
                 Revealed: {mode === 'grammar' ? currentGrammarExercise?.acceptedAnswers[0] ?? '' : practiceUnits[practiceIndex] ?? ''}
               </Text>
             )}
@@ -719,16 +726,16 @@ export default function LessonScreen() {
             ) : null}
             {mode === 'grammar' ? (
               <>
-                <Pressable style={styles.secondaryButton} onPress={revealPracticeAnswer}>
-                  <Text style={styles.secondaryButtonText}>Reveal answer</Text>
+                <Pressable style={[styles.secondaryButton, highContrast && styles.secondaryHighContrast]} onPress={revealPracticeAnswer}>
+                  <Text style={[styles.secondaryButtonText, highContrast && styles.secondaryTextHighContrast]}>Reveal answer</Text>
                 </Pressable>
                 {practiceAnswerStatus === 'correct' ? (
-                  <Pressable style={styles.actionButton} onPress={nextPracticeStep}>
-                    <Text style={styles.actionButtonText}>Next</Text>
+                  <Pressable style={[styles.actionButton, highContrast && styles.primaryHighContrast]} onPress={nextPracticeStep}>
+                    <Text style={[styles.actionButtonText, highContrast && styles.primaryTextHighContrast]}>Next</Text>
                   </Pressable>
                 ) : (
-                  <Pressable style={styles.actionButton} onPress={checkPracticeAnswer}>
-                    <Text style={styles.actionButtonText}>Check answer</Text>
+                  <Pressable style={[styles.actionButton, highContrast && styles.primaryHighContrast]} onPress={checkPracticeAnswer}>
+                    <Text style={[styles.actionButtonText, highContrast && styles.primaryTextHighContrast]}>Check answer</Text>
                   </Pressable>
                 )}
               </>
@@ -771,20 +778,20 @@ export default function LessonScreen() {
         )}
 
         {phase === 'complete' && (
-          <View style={styles.panel}>
-            <Text style={styles.panelTitle}>Lesson Complete</Text>
-            <Text style={styles.goalText}>Practice score: {practiceCorrect}/{practiceTotal}</Text>
-            {mode === 'words' && <Text style={styles.goalText}>Quiz score: {quizCorrect}/{quizTotal}</Text>}
+          <View style={[styles.panel, highContrast && styles.cardHighContrast]}>
+            <Text style={[styles.panelTitle, highContrast && styles.titleHighContrast]}>Lesson Complete</Text>
+            <Text style={[styles.goalText, highContrast && styles.textHighContrast]}>Practice score: {practiceCorrect}/{practiceTotal}</Text>
+            {mode === 'words' && <Text style={[styles.goalText, highContrast && styles.textHighContrast]}>Quiz score: {quizCorrect}/{quizTotal}</Text>}
             {mode === 'grammar' ? (
               <>
-                <Pressable style={styles.secondaryButton} onPress={restartTeachMode}>
-                  <Text style={styles.secondaryButtonText}>Back to teach</Text>
+                <Pressable style={[styles.secondaryButton, highContrast && styles.secondaryHighContrast]} onPress={restartTeachMode}>
+                  <Text style={[styles.secondaryButtonText, highContrast && styles.secondaryTextHighContrast]}>Back to teach</Text>
                 </Pressable>
-                <Pressable style={styles.actionButton} onPress={restartLesson}>
-                  <Text style={styles.actionButtonText}>Restart lesson</Text>
+                <Pressable style={[styles.actionButton, highContrast && styles.primaryHighContrast]} onPress={restartLesson}>
+                  <Text style={[styles.actionButtonText, highContrast && styles.primaryTextHighContrast]}>Restart lesson</Text>
                 </Pressable>
-                <Pressable style={styles.secondaryButton} onPress={() => router.back()}>
-                  <Text style={styles.secondaryButtonText}>Back to lessons</Text>
+                <Pressable style={[styles.secondaryButton, highContrast && styles.secondaryHighContrast]} onPress={() => router.back()}>
+                  <Text style={[styles.secondaryButtonText, highContrast && styles.secondaryTextHighContrast]}>Back to lessons</Text>
                 </Pressable>
               </>
             ) : (
@@ -804,6 +811,9 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: '#D7F58B',
+  },
+  safeHighContrast: {
+    backgroundColor: '#000000',
   },
   gradient: {
     flex: 1,
@@ -866,6 +876,46 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
     backgroundColor: '#0A6D3E',
+  },
+  progressTrackHighContrast: {
+    backgroundColor: '#333333',
+    borderColor: '#FFFFFF',
+    borderWidth: 1,
+  },
+  progressFillHighContrast: {
+    backgroundColor: '#FFD400',
+  },
+  cardHighContrast: {
+    backgroundColor: '#000000',
+    borderColor: '#FFFFFF',
+    borderWidth: 3,
+  },
+  titleHighContrast: {
+    color: '#FFD400',
+  },
+  textHighContrast: {
+    color: '#FFFFFF',
+  },
+  primaryHighContrast: {
+    backgroundColor: '#FFD400',
+    borderColor: '#FFD400',
+  },
+  primaryTextHighContrast: {
+    color: '#000000',
+  },
+  secondaryHighContrast: {
+    backgroundColor: '#000000',
+    borderColor: '#FFD400',
+    borderWidth: 3,
+  },
+  secondaryTextHighContrast: {
+    color: '#FFD400',
+  },
+  inputHighContrast: {
+    backgroundColor: '#000000',
+    borderColor: '#FFFFFF',
+    borderWidth: 2,
+    color: '#FFFFFF',
   },
   progressText: {
     marginTop: 8,

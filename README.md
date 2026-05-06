@@ -95,13 +95,3 @@ Preferences are stored on the device and persist between launches.
 - `contexts/` — global preference state
 
 ---
-
-## Deployment (optional)
-
-The repository may include a GitHub Actions workflow to export the **web** build and deploy to **GitHub Pages**. If present, it lives under `.github/workflows/` at the repo root (parent of `aslApp334`). Enable Pages in the repository settings if you use that workflow.
-
----
-
-## License
-
-Private project unless you add an explicit license file.

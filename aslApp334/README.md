@@ -1,50 +1,107 @@
-# Welcome to your Expo app 👋
+# ASL Fingerspelling Learning App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A cross-platform app for learning and practicing American Sign Language (ASL) fingerspelling. You can follow structured lessons (letters, words, grammar), build custom word lists, and practice alongside your front camera.
 
-## Get started
+## Tech stack
 
-1. Install dependencies
+| Layer | Technology |
+|--------|------------|
+| Framework | [Expo](https://expo.dev/) SDK **54** |
+| UI | [React](https://react.dev/) **19**, [React Native](https://reactnative.dev/) **0.81** |
+| Navigation | [Expo Router](https://docs.expo.dev/router/introduction/) **6** (file-based routes) |
+| Language | **TypeScript** |
+| Media | [expo-camera](https://docs.expo.dev/versions/latest/sdk/camera/) (live preview), [expo-video](https://docs.expo.dev/versions/latest/sdk/video/) (letter clips), [expo-image](https://docs.expo.dev/versions/latest/sdk/image/) (static signs) |
+| Storage | [@react-native-async-storage/async-storage](https://react-native-async-storage.github.io/async-storage/) (saved word sets, preferences) |
+| Other | React Navigation tabs, Reanimated, Gesture Handler, Safe Area |
 
-   ```bash
-   npm install
-   ```
+The project runs on **iOS**, **Android**, and **web** (`react-native-web`). Camera-dependent features work best on a physical device or simulator with camera support; browser behavior may vary.
 
-2. Start the app
+## Prerequisites
 
-   ```bash
-   npx expo start
-   ```
+- **Node.js 20** (recommended for Expo SDK 54)
+- npm (ships with Node)
 
-In the output, you'll find options to open the app in a
+## Setup and run
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+From this directory (`aslApp334`):
 
 ```bash
-npm run reset-project
+npm install
+npm start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Then choose a target in the Expo CLI (Expo Go, iOS Simulator, Android emulator, or web). Shortcuts:
 
-## Learn more
+```bash
+npm run ios
+npm run android
+npm run web
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Lint:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npm run lint
+```
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+## How to use the app
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+The main experience is organized into **four bottom tabs**.
+
+### Learn
+
+- Choose a **mode**: **Basic Letters**, **Full Words**, or **Grammar**.
+- Under **Lesson Modules**, tap a lesson to open the full **lesson screen**.
+- In a lesson, use the subtabs **Teach**, **Practice**, **Quiz**, and **Complete** to move through instruction, drills, and wrap-up.
+- **Teach** shows each letter or word unit with sign images or videos (depending on **Preferences**).
+- **Practice** lets you type answers and get feedback; **Quiz** tests recall; **Complete** summarizes progress.
+
+### My sets
+
+- **Create a set**: Enter a name and a list of words (commas or line breaks; only **A–Z** letters are kept).
+- **Start without saving** opens the lesson flow once with those words (not stored).
+- **Save and practice** stores the set and opens it in the lesson viewer.
+- **Saved sets** lists everything on device, including the default **Months of the year** list.
+- Tap **Study** to open that list in the lesson screen. Tap **Delete** to remove a set (the default months list can be removed; it is hidden via app storage, not mixed with your custom JSON).
+
+### Practice (camera)
+
+- Intended for **practicing next to a live camera** (front camera when permission is granted).
+- **Sets**: horizontally scroll your saved sets (and the built-in months list if you have not removed it). Tap a set card to select it and switch toward the **Words** flow.
+- **Words**: pick a word, then follow the **sign lesson** (letters of that word) in the top area while the **camera** stays in the lower area.
+- Grant **camera** access when prompted so you can see yourself while practicing.
+
+### Preferences
+
+- **Dominant hand**: **Lefty** / **Righty** (mirrors sign preview so it matches your signing hand).
+- **Letter display**: **Static** images vs **Video** clips for each letter.
+- **Video speed**: slider when using video (also affects some timed image steps in practice).
+- **Practice: auto-advance letters**: in the camera practice follow-along, advances letters automatically when appropriate.
+- **High contrast**: stronger colors for readability.
+
+Preferences are stored on the device and persist between launches.
+
+---
+
+## Project layout (high level)
+
+- `app/(tabs)/` — tab screens: Learn (`index`), My sets, Practice (`explore`), Preferences
+- `app/lesson.tsx` — full-screen lesson (Teach / Practice / Quiz / Complete)
+- `components/` — UI pieces (e.g. letter sign, follow-along panel)
+- `constants/` — lesson data, built-in word sets, ASL assets mapping
+- `lib/` — word-set persistence, parsing, preference helpers
+- `contexts/` — global preference state
+
+---
+
+## Deployment (optional)
+
+The repository may include a GitHub Actions workflow to export the **web** build and deploy to **GitHub Pages**. If present, it lives under `.github/workflows/` at the repo root (parent of `aslApp334`). Enable Pages in the repository settings if you use that workflow.
+
+---
+
+## License
+
+Private project unless you add an explicit license file.
